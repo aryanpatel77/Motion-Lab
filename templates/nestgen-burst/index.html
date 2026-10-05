@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<title>NestGen burst promo</title>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Jakarta"; src: url(assets/fonts/PlusJakartaSans.woff2) format("woff2"); font-weight: 200 800; }
+:root { --bg: #F2F1F6; --ink: #17142A; --purple: #6B1FE0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+#root { position: relative; width: 1920px; height: 1080px; overflow: hidden; font-family: "Jakarta", sans-serif; background: var(--bg); }
+.full { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; }
+.abs { position: absolute; }
+
+/* paper grain, shifted every frame */
+#grain { position: absolute; inset: -40px; pointer-events: none; opacity: .07; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+
+/* 3D cube built from the logo's three faces */
+.stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; perspective: 1700px; }
+.mover { position: absolute; width: 0; height: 0; transform-style: preserve-3d; }
+.tilt, .spin { position: absolute; width: 0; height: 0; transform-style: preserve-3d; }
+.face { position: absolute; backface-visibility: hidden; }
+.face img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 13%; transform: scale(.9); display: block; }
+
+/* burst */
+#burstSvg { position: absolute; left: 0; top: 0; }
+.kw { position: absolute; left: 0; top: 0; white-space: nowrap; color: var(--ink); font-weight: 500; letter-spacing: -.01em; line-height: 1; }
+.kw span { display: inline-block; padding: .38em .8em .42em; border-radius: 999px; }
+.kw.pill span { background: rgba(255, 255, 255, .62); box-shadow: 0 2px 10px rgba(30, 10, 60, .06); }
+.kw.faint { color: rgba(23, 20, 42, .45); }
+
+/* cards */
+.card { position: absolute; overflow: hidden; border-radius: 18px; background: #ddd; box-shadow: 0 14px 34px rgba(30, 14, 70, .16); }
+.card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tag { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); padding: 9px 22px 11px; border-radius: 999px;
+  background: rgba(255, 255, 255, .78); color: var(--ink); font-size: 25px; font-weight: 500; white-space: nowrap; }
+.dash { position: absolute; height: 4px; border-radius: 2px; background: var(--purple); }
+
+/* detail card */
+#detail { position: absolute; height: 640px; border-radius: 18px; background: #fff; box-shadow: 0 18px 44px rgba(30, 14, 70, .14); overflow: hidden; }
+#dImg { position: absolute; left: 0; top: 0; width: 440px; height: 640px; overflow: hidden; z-index: 2; }
+#dImg img { width: 100%; height: 100%; object-fit: cover; }
+#dPanel { position: absolute; left: 440px; top: 0; height: 640px; overflow: hidden; }
+#dPanel .in { position: absolute; right: 0; top: 0; width: 660px; height: 640px; padding: 46px 44px 0 40px; }
+#dPanel h2 { font-size: 36px; font-weight: 500; color: var(--ink); letter-spacing: -.015em; margin-bottom: 30px; white-space: nowrap; }
+.cm { display: flex; gap: 16px; margin-bottom: 26px; font-size: 21px; line-height: 1.35; color: #2d2840; }
+.cm i { flex: none; width: 30px; height: 30px; border-radius: 50%; margin-top: 2px; }
+.cm b { font-weight: 700; margin-right: 6px; color: var(--ink); }
+
+/* end text */
+#endBg { background: radial-gradient(120% 120% at 50% 40%, #7424EE 0%, #5B1ADB 55%, #4313B8 100%); }
+.say { position: absolute; left: 0; width: 1920px; top: 0; height: 1080px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; }
+.say .lead { font-size: 36px; font-weight: 400; opacity: .92; margin-bottom: 4px; }
+.say .main { font-size: 84px; font-weight: 700; letter-spacing: -.02em; line-height: 1.05; }
+.say .wrap { transform-origin: 50% 50%; display: flex; flex-direction: column; align-items: center; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="10.8" data-width="1920" data-height="1080"></div>
+<script>
+/* ============================================================================================
+   NestGen re-skin of the "every inspiration in one place" burst promo (reference: 30 fps, 322 frames).
+   All timings are reference frame numbers: f(n) = n / 30.  Copy + images live in CONTENT below.
+   ============================================================================================ */
+const CONTENT = {
+  keywords: [
+    // text, angle (deg, 0 = right, clockwise), radius px, font px, style ("pill" | "" | "faint"), depth blur px
+    ["physical ai", -158, 560, 34, "pill", 0],
+    ["drone autonomy", -22, 600, 34, "pill", 0],
+    ["bvlos approvals", 22, 430, 24, "pill", 0],
+    ["3 docks to 30", 152, 690, 46, "pill", 1.6],
+    ["oil & gas", -62, 380, 19, "faint", 0],
+    ["public safety", 112, 400, 20, "", 0],
+    ["mining ops", -118, 330, 19, "faint", 0],
+    ["utilities", 68, 470, 22, "pill", 0],
+    ["ai data workflows", -94, 270, 15, "faint", 0],
+    ["remote operations", 40, 720, 36, "pill", 1.2],
+    ["dock uptime", 172, 430, 23, "", 0],
+    ["security patrols", -140, 730, 24, "", 0.8],
+    ["multi-site scale", -40, 300, 16, "faint", 0],
+    ["critical infrastructure", 96, 610, 20, "", 0],
+    ["drone-first era", 4, 330, 18, "pill", 0],
+  ],
+  // three grid looks (category cuts on the beat); hero = centre card, label = its pill
+  sets: [
+    { label: "nestgen '26", hero: "ng00", cards: ["ng02","ng03","dr01","ng04","ng05","dr12","ng06","ng07","dr08","ng09","ng01","ng12","dr14","ng10"] },
+    { label: "drones & docks", hero: "dr03", cards: ["dr01","dr02","dr04","dr05","dr06","dr07","dr08","dr09","dr10","dr11","dr12","dr13","dr14","dr15"] },
+    { label: "live sessions", hero: "ng14", cards: ["ng13","ng15","ng16","ng17","ng18","ng19","ng20","ng21","ng22","ng23","ng24","ng05","ng02","ng08"] },
+  ],
+  focus: { ng01: "82% 55%", ng02: "70% 50%", ng00: "50% 58%", ng20: "58% 45%" },          // object-position for photos whose subject is off-centre
+  detail: { img: "ng20", title: "what everyone asked at nestgen", tag: "watch session", comments: [
+    ["#F4B860", "ops_lead", "How do we get BVLOS approvals faster?"],
+    ["#9EC3FF", "skypatrol", "What does it take to go from pilot to program?"],
+    ["#B78CFF", "gridwatch", "How do we prove the ROI to leadership?"],
+    ["#FF8A5C", "minesite", "Who's already running docks 24/7?"],
+  ]},
+  lines: [
+    { lead: "From", main: "pilot programs" },
+    { lead: "to", main: "physical ai at scale" },
+    { lead: "", main: "every drone-first pioneer" },
+    { lead: "", main: "in one place." },
+  ],
+};
+
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({ paused: true });
+const root = document.getElementById("root");
+const f = n => n / 30;
+const CX = 962, CY = 541;                                    // burst / logo centre (measured: logo holds at 963,541)
+const PAL = ["#6B1FE0", "#2E63F5", "#FF8A26", "#C7B6FF", "#AFC8FF", "#FFC79E", "#FF5A3C", "#E9E1FF"];
+function rng(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+let track = 1, uid = 0;
+function clip(t0, t1, html, cls = "", style = "") {
+  const d = document.createElement("div");
+  d.className = "clip " + cls; d.id = "c" + (uid++);
+  // shift both edges 1 ms earlier so a clip owns [t0, t1) exactly: no doubled or empty frame at a cut
+  const s0 = Math.max(0, t0 - 0.001), e0 = t1 - 0.001;
+  d.dataset.start = s0.toFixed(4); d.dataset.duration = Math.max(0.034, e0 - s0).toFixed(4); d.dataset.trackIndex = String(track++);
+  if (style) d.setAttribute("style", style);
+  d.innerHTML = html; root.appendChild(d); return d;
+}
+function el(parent, tag, cls, style, html) {
+  const e = document.createElement(tag); if (cls) e.className = cls; if (style) e.setAttribute("style", style);
+  if (html != null) e.innerHTML = html; parent.appendChild(e); return e;
+}
+const img = id => `assets/img/${id}.jpg`;
+const focus = id => (CONTENT.focus || {})[id] || "50% 50%";
+/* measured curves: [[frame, value], ...] -> value at any frame (linear between samples) */
+function curve(pts) {
+  return n => {
+    if (n <= pts[0][0]) return pts[0][1];
+    for (let i = 1; i < pts.length; i++) if (n <= pts[i][0]) {
+      const [a, va] = pts[i - 1], [b, vb] = pts[i]; return va + (vb - va) * (n - a) / (b - a);
+    }
+    return pts[pts.length - 1][1];
+  };
+}
+/* drive props frame by frame from functions of the frame number (props: {x: n => ..., scale: n => ...}) */
+function drive(target, n0, n1, props, step = 1) {
+  const at = n => { const o = {}; for (const k in props) o[k] = props[k](n); return o; };
+  tl.set(target, at(n0), f(n0));
+  for (let n = n0; n < n1; n += step) tl.to(target, { ...at(Math.min(n + step, n1)), duration: f(Math.min(step, n1 - n)), ease: "none" }, f(n));
+}
+
+/* ---- reusable 3D cube (faces unwarped from the logo; at rest it matches the flat icon) ---------- */
+function cube(parent, S) {
+  const stage = el(parent, "div", "stage");
+  const mover = el(stage, "div", "mover", "left:0;top:0");
+  const tilt = el(mover, "div", "tilt"), spin = el(tilt, "div", "spin");
+  [["top", `rotateX(90deg) translateZ(${S / 2}px)`, "rotate(-90deg)"],
+   ["left", `rotateY(-90deg) translateZ(${S / 2}px)`, ""],
+   ["right", `translateZ(${S / 2}px)`, ""],
+   ["left", `rotateY(90deg) translateZ(${S / 2}px)`, ""],
+   ["right", `rotateY(180deg) translateZ(${S / 2}px)`, ""],
+   ["top", `rotateX(-90deg) translateZ(${S / 2}px)`, ""]].forEach(([tex, tf, rot]) => {
+    const fc = el(spin, "div", "face", `left:${-S / 2}px;top:${-S / 2}px;width:${S}px;height:${S}px;transform:${tf}`);
+    el(fc, "img", "", rot ? `transform:scale(.9) ${rot}` : "").src = `assets/logo/face-${tex}.png`;
+  });
+  return { stage, mover, tilt, spin };
+}
+const ISO_X = -35.264, ISO_Y = 45;
+const CUBE_W = S => S * 1.414;                               // on-screen width of the cube in its logo pose
+
+/* ---- grain (whole film) ------------------------------------------------------------------------ */
+clip(0, 10.8, `<div id="grain"></div>`, "full", "z-index:50;pointer-events:none");
+tl.fromTo("#grain", { x: 0, y: 0 }, { x: 37 * 324, y: 23 * 324, duration: 10.8, ease: "steps(324)", modifiers: {
+  x: v => (parseFloat(v) % 40) + "px", y: v => (parseFloat(v) % 40) + "px" } }, 0);
+
+/* ================= 1. cube flies in (f7-29): path, size measured per frame from the reference pin ========= */
+const S1 = clip(f(7), f(30), "", "full");
+const C1S = 86, C1 = cube(S1, C1S);                          // 86 px cube = 122 px wide in logo pose
+const P1x = [950, 952, 957, 962, 969, 981, 998, 1015, 1028, 1038, 1045, 1051, 1055, 1058, 1059, 1061, 1061, 1060, 1058, 1054, 1047, 1035, 1011, 998];
+const P1y = [1185, 1112, 1036, 961, 887, 828, 785, 752, 724, 696, 671, 648, 627, 609, 593, 580, 569, 561, 555, 550, 547, 547, 551, 550];
+const P1w = [114, 114, 114, 111, 114, 129, 138, 150, 165, 177, 186, 195, 201, 204, 207, 210, 210, 210, 207, 198, 189, 171, 145, 119];
+const at1 = arr => n => arr[Math.max(0, Math.min(arr.length - 1, Math.round(n) - 7))];
+drive(C1.mover, 7, 30, { x: at1(P1x), y: at1(P1y), scale: n => at1(P1w)(n) / CUBE_W(C1S) });
+// rotation: side-on and tumbling while it rises, squares up to the logo pose; the last turn is fast (blurs)
+tl.fromTo(C1.tilt, { rotationX: 58, rotationZ: 34 }, { rotationX: ISO_X, rotationZ: 0, duration: f(26) - f(7), ease: "power2.out" }, f(7));
+tl.fromTo(C1.spin, { rotationY: -255 }, { rotationY: ISO_Y - 70, duration: f(26) - f(7), ease: "power2.out" }, f(7));
+tl.to(C1.spin, { rotationY: ISO_Y, duration: f(30) - f(26), ease: "power2.in" }, f(26));
+// speed lines beside the rising cube (they trail below it and flicker frame to frame)
+const sl = rng(7);
+for (let n = 12; n <= 21; n++) {
+  const k = clip(f(n), f(n + 1), "", "full"), cnt = 1 + Math.floor(sl() * 3);
+  for (let i = 0; i < cnt; i++) {
+    const h = 24 + sl() * 110, x = P1x[n - 7] - 150 + sl() * 300, y = P1y[n - 7] + 70 + sl() * 150;
+    el(k, "div", "abs", `left:${x}px;top:${y}px;width:4px;height:${h}px;border-radius:2px;background:#6B1FE0;opacity:${.55 + sl() * .45}`);
+  }
+}
+
+/* ================= 2. flat logo + radial burst (f30-93) ================= */
+const ICON_W = 104, ICON_H = ICON_W / 0.903;
+const S2 = clip(f(30), f(94), `<svg id="burstSvg" width="1920" height="1080" viewBox="0 0 1920 1080"><g id="burst"></g></svg><div id="kws" class="full"></div>
+  <img id="flatIcon" class="abs" src="assets/logo/cube-icon.png" style="left:${-ICON_W / 2}px;top:${-ICON_H / 2}px;width:${ICON_W}px;height:${ICON_H}px">`, "full");
+// swap frame: lands 119 px wide at (998,550), settles to 99-104 px at the centre in 2 frames
+drive("#flatIcon", 30, 33, { x: curve([[30, 998], [31, 971], [32, 966], [33, CX]]), y: curve([[30, 550], [31, 546], [32, 542], [33, CY]]),
+  scale: curve([[30, 119 / 99], [31, 104 / 99], [32, 98 / 99], [33, 1]]) });
+// wedges: partition the circle into random widths, neighbours never share a colour
+const wr = rng(23), wedges = []; let a = -90;
+while (a < 270) { const w = Math.min(270 - a, 9 + wr() * 21); wedges.push({ a0: a, a1: a + w }); a += w; }
+const R = 2600, g = document.getElementById("burst");
+let prevCol = -1;
+wedges.forEach(wd => {
+  let c; do { c = Math.floor(wr() * PAL.length); } while (c === prevCol); prevCol = c; wd.col = c;
+  const p = t => `${(CX + R * Math.cos(t * Math.PI / 180)).toFixed(1)},${(CY + R * Math.sin(t * Math.PI / 180)).toFixed(1)}`;
+  const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+  poly.setAttribute("points", `${CX},${CY} ${p(wd.a0)} ${p(wd.a1)}`); poly.setAttribute("fill", PAL[c]);
+  g.appendChild(poly); wd.el = poly;
+});
+// spawn: coverage grows ~linearly from f31 to f48 (measured 3% -> 98%), each wedge shoots out in 3 frames
+const order = wedges.map((w, i) => i).sort(() => wr() - .5);
+order.forEach((i, k) => {
+  const t0 = f(31 + 16 * k / order.length);
+  tl.fromTo(wedges[i].el, { scale: 0, svgOrigin: `${CX} ${CY}` }, { scale: 1, duration: f(3), ease: "power2.out", svgOrigin: `${CX} ${CY}` }, t0);
+});
+const dark = wedges[order[3]];
+tl.set(dark.el, { attr: { fill: "#16121F" } }, f(33));
+tl.set(dark.el, { attr: { fill: PAL[dark.col] } }, f(53));
+const fr = rng(99);
+for (let n = 46; n <= 92; n += 3) for (let j = 0; j < 2; j++) {
+  const wd = wedges[Math.floor(fr() * wedges.length)];
+  tl.set(wd.el, { attr: { fill: PAL[Math.floor(fr() * PAL.length)] } }, f(n));
+}
+// camera on the keyword layer, measured from the reference labels (scale relative to f41)
+const CAM = curve([[35, .30], [36, .49], [37, .74], [38, .83], [39, .89], [40, .96], [41, 1], [42, 1.04], [43, 1.07], [45, 1.14], [49, 1.21],
+  [53, 1.24], [57, 1.26], [65, 1.28], [72, 1.30], [80, 1.30], [82, 1.27], [84, 1.23], [86, 1.17], [88, 1.08], [89, 1.03], [90, .96],
+  [91, .88], [92, .73], [93, .57], [94, .45]]);
+const kws = document.getElementById("kws");
+CONTENT.keywords.forEach(([txt, ang, rad, size, sty, blur], i) => {
+  const k = el(kws, "div", "kw " + sty, `font-size:${size}px`, `<span>${txt}</span>`);
+  const r = rad * 1.12, tx = Math.cos(ang * Math.PI / 180) * r, ty = Math.sin(ang * Math.PI / 180) * r * 0.82;
+  const depth = 0.75 + (size - 15) / 31 * 0.7;                // big = near = moves more (parallax)
+  gsap.set(k, { xPercent: -50, yPercent: -50, opacity: 0, filter: `blur(${blur}px)` });
+  drive(k, 35, 94, { x: n => CX + tx * Math.pow(CAM(n), depth), y: n => CY + ty * Math.pow(CAM(n), depth),
+    scale: n => Math.pow(CAM(n), depth), opacity: n => Math.min(1, (n - 34.5) / 2.5) });
+});
+// chroma fringe on the fast moments
+tl.set("#burstSvg", { filter: "drop-shadow(3px 0 0 rgba(255,40,140,.35)) drop-shadow(-3px 0 0 rgba(0,190,255,.35))" }, f(31));
+tl.set("#burstSvg", { filter: "none" }, f(42));
+tl.set("#burstSvg", { filter: "drop-shadow(4px 0 0 rgba(255,40,140,.35)) drop-shadow(-4px 0 0 rgba(0,190,255,.35))" }, f(89));
+
+/* ================= 3. hero card + cube pin (f94-108), 4. grid (f109-152) ================= */
+const HW = 504, HH = 678, HXc = 957, HYc = 558, HX = HXc - HW / 2, HY = HYc - HH / 2;
+const COLS = [-152, 404, 960, 1516, 2072], CW = 504;
+const LAYOUT = [
+  [0, -140, 420], [0, 320, 380], [0, 740, 420],
+  [1, -90, 330], [1, 280, 400], [1, 720, 420],
+  [2, -300, 480], [2, 937, 360],
+  [3, -60, 360], [3, 340, 330], [3, 710, 430],
+  [4, -200, 440], [4, 280, 400], [4, 720, 400],
+];
+const S3 = clip(f(94), f(153), `<div id="grid" class="full"></div>`, "full");
+const grid = document.getElementById("grid");
+const layers = CONTENT.sets.map((set, si) => {
+  const L = el(grid, "div", "full", `opacity:${si ? 0 : 1}`);
+  L.cards = LAYOUT.map(([c, top, h], k) => {
+    const edge = c === 0 || c === 4;
+    const cd = el(L, "div", "card", `left:${COLS[c] - CW / 2}px;top:${top}px;width:${CW}px;height:${h}px;` +
+      (edge ? "filter:blur(5px) drop-shadow(6px 0 0 rgba(255,40,140,.3)) drop-shadow(-6px 0 0 rgba(0,190,255,.3))" : ""));
+    const ci = el(cd, "img", "", `object-position:${focus(set.cards[k % set.cards.length])}`); ci.src = img(set.cards[k % set.cards.length]);
+    return cd;
+  });
+  return L;
+});
+const hero = el(grid, "div", "card", `left:${HX}px;top:${HY}px;width:${HW}px;height:${HH}px;z-index:5`);
+const heroImgs = CONTENT.sets.map((set, si) => { const im = el(hero, "img", "", `position:absolute;inset:0;object-position:${focus(set.hero)};opacity:${si ? 0 : 1}`); im.src = img(set.hero); return im; });
+const heroTag = el(hero, "div", "tag", "", CONTENT.sets[0].label);
+// card lands big and settles (measured widths 690 -> 504 over f94-105, no overshoot)
+const HS = curve([[94, 690], [95, 618], [96, 588], [97, 567], [98, 552], [99, 540], [100, 528], [101, 522], [102, 516], [103, 510], [104, 507], [105, 504]]);
+drive(hero, 94, 105, { scale: n => HS(n) / 504 });
+tl.set(hero, { filter: "drop-shadow(6px 0 0 rgba(255,40,140,.35)) drop-shadow(-6px 0 0 rgba(0,190,255,.35))" }, f(94));
+tl.set(hero, { filter: "none" }, f(96));
+// the cube pin slides from the top centre to the top-right corner, rocks, then spins down into the badge
+const pinWrap = el(S3, "div", "full", "z-index:8");
+const C2S = 120, C2 = cube(pinWrap, C2S);
+const P2x = curve([[94, 947], [95, 1041], [96, 1092], [97, 1130], [98, 1162], [99, 1190], [100, 1213], [101, 1232], [102, 1245], [103, 1254], [104, 1259], [105, 1261], [106, 1258], [107, 1244], [108, 1203], [109, 1169]]);
+const P2y = curve([[94, 223], [95, 205], [96, 204], [97, 203], [98, 206], [99, 208], [100, 209], [101, 208], [102, 207], [103, 207], [104, 207], [105, 210], [106, 216], [107, 225], [108, 248], [109, 259]]);
+const P2w = curve([[94, 171], [105, 174], [106, 174], [107, 160], [108, 120], [109, 52]]);
+drive(C2.mover, 94, 109, { x: P2x, y: P2y, scale: n => P2w(n) / CUBE_W(C2S) });
+tl.fromTo(C2.tilt, { rotationX: 30, rotationZ: -28 }, { rotationX: ISO_X, rotationZ: 0, duration: f(101) - f(94), ease: "power2.out" }, f(94));
+tl.fromTo(C2.spin, { rotationY: -60 }, { rotationY: ISO_Y, duration: f(101) - f(94), ease: "power2.out" }, f(94));
+[7, -5, 3, -1.5, 0].forEach((r, i) => tl.to(C2.tilt, { rotationZ: r, duration: f(1.4), ease: "sine.inOut" }, f(99 + i * 1.4)));
+tl.to(C2.spin, { rotationY: ISO_Y + 360, duration: f(109) - f(105), ease: "power2.in" }, f(105));
+// the reference pin carries its own motion blur (cards stay crisp): blur while it slides in and while it spins away
+tl.fromTo(pinWrap, { filter: "blur(7px)" }, { filter: "blur(0px)", duration: f(98) - f(94), ease: "power2.out" }, f(94));
+tl.to(pinWrap, { filter: "blur(5px)", duration: f(109) - f(106), ease: "power2.in" }, f(106));
+tl.set(pinWrap, { opacity: 0 }, f(109));
+const badge = el(hero, "img", "", `position:absolute;right:14px;top:14px;width:52px;height:auto;object-fit:contain;z-index:3;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25));opacity:0`);
+badge.src = "assets/logo/cube-icon.png";
+tl.set(badge, { opacity: 1 }, f(109));
+// impact dashes radiating from the card as the cube arrives
+const DASH = [[-150, HX - 60, HY + 140], [-30, HX + HW + 70, HY + 60], [200, HX - 40, HY + HH - 110], [20, HX + HW + 60, HY + HH * 0.55],
+  [-75, 1300, 120], [-110, HX + 90, HY - 60]];
+DASH.forEach(([ang, x, y], i) => {
+  const d = el(S3, "div", "dash", `left:${x}px;top:${y}px;width:130px;transform-origin:0 50%;transform:rotate(${ang}deg) scaleX(0);z-index:9`);
+  tl.to(d, { scaleX: 1, duration: f(3), ease: "power3.out" }, f(95 + (i % 3) * 0.5));
+  tl.to(d, { x: Math.cos(ang * Math.PI / 180) * 110, y: Math.sin(ang * Math.PI / 180) * 110, scaleX: 0, duration: f(4), ease: "power2.in" }, f(98.5 + (i % 3) * 0.5));
+});
+// grid flies in from the edges in ~5 frames (measured coverage 17% -> 79% over f108-115), then holds still
+layers.forEach((L, si) => L.cards.forEach(cd => gsap.set(cd, { opacity: si ? 1 : 0 })));
+const ord = LAYOUT.map((l, k) => [k, Math.hypot(COLS[l[0]] - 960, l[1] + l[2] / 2 - 540)]).sort((p, q) => p[1] - q[1]);
+ord.forEach(([k], n) => {
+  const [c, top, h] = LAYOUT[k], cd = layers[0].cards[k];
+  const vx = COLS[c] - 960, vy = top + h / 2 - 540, len = Math.hypot(vx, vy) || 1;
+  tl.fromTo(cd, { x: vx / len * 520, y: vy / len * 520 }, { x: 0, y: 0, duration: f(5), ease: "expo.out" }, f(109 + n * 0.35));
+  tl.set(cd, { opacity: 0 }, 0); tl.set(cd, { opacity: 1 }, f(109 + n * 0.35));
+});
+// category cuts on the beat
+[[124, 1], [136, 2]].forEach(([n, si]) => {
+  layers.forEach((L, j) => tl.set(L, { opacity: j === si ? 1 : 0 }, f(n)));
+  heroImgs.forEach((im, j) => tl.set(im, { opacity: j === si ? 1 : 0 }, f(n)));
+  tl.set(heroTag, { innerHTML: CONTENT.sets[si].label }, f(n));
+});
+// lead-in to the detail card: zoom 1 -> 1.045 toward the hero (measured f146-150), badge pops away, card starts to widen
+tl.fromTo(grid, { scale: 1 }, { scale: 1.06, duration: f(153) - f(146), ease: "power2.in", transformOrigin: `${HXc}px ${HYc}px` }, f(146));
+tl.to(badge, { scale: 0, duration: f(1.5), ease: "power2.in" }, f(150));
+tl.to(hero, { width: HW + 80, duration: f(2.5), ease: "power2.in" }, f(150.5));
+
+/* ================= 5. detail card (f153-175) ================= */
+const D = CONTENT.detail, DH = 642, DIW = 486;
+clip(f(153), f(176), `<div id="detail" style="height:${DH}px"><div id="dImg" style="width:${DIW}px;height:${DH}px"><img src="${img(D.img)}" style="object-position:${focus(D.img)}"><div class="tag">${D.tag}</div></div>
+  <div id="dPanel" style="left:${DIW}px;height:${DH}px"><div class="in" style="height:${DH}px">${`<h2>${D.title}</h2>`}${D.comments.map(([c, h, t]) => `<div class="cm"><i style="background:${c}"></i><div><b>${h}</b>${t}</div></div>`).join("")}</div></div></div>`, "full");
+// measured outer width per frame f153-162 (852 -> 1170), centre ~965; then falls away f166-175 (+78 px, accelerating)
+const DWc = curve([[153, 852], [154, 963], [155, 1029], [156, 1077], [157, 1107], [158, 1134], [159, 1149], [160, 1158], [161, 1167], [162, 1170]]);
+gsap.set("#detail", { top: 237 });
+drive("#detail", 153, 162, { width: DWc, left: n => 965 - DWc(n) / 2 });
+drive("#dPanel", 153, 162, { width: n => DWc(n) - DIW });
+drive("#detail", 165, 176, { y: curve([[165, 0], [166, 3], [167, 6], [168, 9], [169, 12], [170, 15], [171, 21], [172, 27], [173, 36], [174, 48], [175, 78], [176, 120]]) });
+document.querySelectorAll("#dPanel .cm").forEach((c, i) =>
+  tl.fromTo(c, { opacity: 0.22, color: "#C9B6F5" }, { opacity: 1, color: "#2d2840", duration: f(3), ease: "power1.out" }, f(155 + i * 3)));
+
+/* ================= 6. kinetic type on purple (f176-271): measured width curves per line ================= */
+clip(f(176), f(272), "", "full").id = "endBg";
+const LT = [176, 196, 212, 235, 272];
+const SC = [  // relative scale samples per line (from measured text widths)
+  curve([[176, 1], [185, 1.006], [188, .994], [191, .982], [194, .946], [196, .93]]),
+  curve([[196, 1], [197, 1], [200, .968], [203, .947], [206, .925], [209, .893], [211, .875]]),
+  curve([[212, 1], [215, .961], [218, .942], [221, .932], [224, .923], [227, .913], [230, .894], [233, .86], [235, .83]]),
+  curve([[235, 1], [236, 1], [239, .974], [242, .961], [245, .948], [251, .935], [257, .923], [263, .91], [266, .897], [269, .871], [272, .85]]),
+];
+const DY0 = curve([[176, -56], [179, -25], [182, -14], [185, -5], [188, -2], [191, 0]]);   // first line keeps falling with the card
+CONTENT.lines.forEach((ln, i) => {
+  const c = clip(f(LT[i]), f(LT[i + 1]), `<div class="say"><div class="wrap">${ln.lead ? `<div class="lead">${ln.lead}</div>` : ""}<div class="main">${ln.main}</div></div></div>`, "full");
+  drive(c.querySelector(".wrap"), LT[i], LT[i + 1], { scale: SC[i], y: i === 0 ? DY0 : () => 0 });
+});
+
+/* ================= 7. end card (f272-end): fast settle then creep (measured 498 -> 432 px) ================= */
+clip(f(272), 10.8, `<img id="endLogo" class="abs" src="assets/logo/nestgen-logo-dark.png" style="left:${960 - 270}px;top:${540 - 121}px;width:540px">`, "full");
+drive("#endLogo", 272, 324, { scale: curve([[272, 1], [277, .94], [282, .922], [287, .91], [292, .892], [302, .886], [312, .873], [317, .867], [324, .86]]) }, 2);
+
+tl.set({}, {}, 10.8);
+window.__timelines["main"] = tl;
+</script>
+</body>
+</html>

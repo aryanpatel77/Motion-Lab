@@ -1,0 +1,62 @@
+/* NestGen lower third — geometry measured from the 1920x1080 master (name bar 521x82 at 64,810).
+   All sizes are in the template's own px; scale the root (.ngl) with a transform to resize. */
+@font-face { font-family: "NGL Serif"; src: url(assets/fonts/LibreCaslonText-700.woff2) format("woff2"); font-weight: 700; }
+@font-face { font-family: "NGL Sans"; src: url(assets/fonts/Inter.woff2) format("woff2"); font-weight: 100 900; }
+
+.ngl { position: absolute; width: 700px; height: 150px; transform-origin: 0 0;
+  --ngl-hi: rgba(160, 90, 255, .35); --ngl-hi0: rgba(160, 90, 255, 0); --ngl-shade: rgba(18, 0, 40, .22);
+  --ngl-bar: linear-gradient(90deg, #6000b6 0%, #6800bc 20%, #7414c2 45%, #6310a0 72%, #480b74 92%, #430a6c 100%);
+  --ngl-tint: 215,190,255; --ngl-tint2: 230,210,255; --ngl-edge: #7a1fd8; --ngl-edge-glow: rgba(160, 90, 255, .9); }
+/* blue theme: bright blue -> dark navy */
+.ngl.ngl--blue {
+  --ngl-hi: rgba(90, 160, 255, .35); --ngl-hi0: rgba(90, 160, 255, 0); --ngl-shade: rgba(0, 8, 40, .25);
+  --ngl-bar: linear-gradient(90deg, #1257f0 0%, #1a5cff 18%, #1848d8 45%, #1236a8 70%, #0c2378 90%, #0a1c62 100%);
+  --ngl-tint: 185,210,255; --ngl-tint2: 205,225,255; --ngl-edge: #1f6bff; --ngl-edge-glow: rgba(80, 150, 255, .9); }
+
+/* ---- name bar (revealed through a window that follows the light beam) ---- */
+.ngl-win { position: absolute; left: 0; top: 0; height: 82px; overflow: hidden; }
+.ngl-bar { position: relative; height: 82px; overflow: hidden;
+  background:
+    radial-gradient(ellipse 45% 70% at 52% 0%, var(--ngl-hi), var(--ngl-hi0) 70%),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0) 35%, var(--ngl-shade) 100%),
+    var(--ngl-bar); }
+.ngl-stars, .ngl-bokeh { position: absolute; left: 0; top: 0; width: 1px; height: 1px; border-radius: 50%; }
+.ngl-orb { position: absolute; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,.75) 0%, rgba(var(--ngl-tint2),.25) 45%, rgba(255,255,255,0) 72%); }
+.ngl-name { position: absolute; left: 19px; top: 0; height: 82px; display: flex; align-items: center; white-space: nowrap;
+  font-family: "NGL Serif", serif; font-weight: 700; font-size: 62px; line-height: 1; color: #fff; padding-top: 6px;
+  letter-spacing: 0.005em; }
+.ngl-name-in { display: inline-block; white-space: nowrap; transform-origin: 0 50%; }
+.ngl-ch { display: inline-block; transform-origin: 100% 50%;
+  /* LED dot-matrix texture */
+  -webkit-mask-image: radial-gradient(circle, #000 52%, rgba(0,0,0,.25) 68%); -webkit-mask-size: 3px 3px;
+  mask-image: radial-gradient(circle, #000 52%, rgba(0,0,0,.25) 68%); mask-size: 3px 3px; }
+.ngl-sp { display: inline-block; width: .26em; }
+
+/* ---- light (bracket segments, ghost, beam, bloom) ---- */
+.ngl-light { position: absolute; left: 0; top: 0; width: 1px; height: 1px;
+  filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 9px rgba(255,255,255,.9)) drop-shadow(0 0 22px rgba(var(--ngl-tint),.75)); }
+.ngl-seg { position: absolute; height: 4px; transform-origin: 0 50%; }
+.ngl-segwin { position: absolute; left: 0; top: 0; height: 4px; overflow: hidden; }
+.ngl-seg i { position: absolute; left: 0; top: 0; height: 4px; background: #fff; border-radius: 2px; transform-origin: 0 50%; display: block; }
+.ngl-ghosts { position: absolute; left: 0; top: 0; width: 1px; height: 1px; filter: blur(7px); }
+.ngl-ghost { position: absolute; width: 96px; height: 12px; border-radius: 6px; background: rgba(95, 95, 110, .75); }
+.ngl-bloom { position: absolute; width: 220px; height: 220px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,.55) 0%, rgba(var(--ngl-tint2),.22) 35%, rgba(255,255,255,0) 70%); }
+.ngl-halo { position: absolute; width: 180px; height: 220px; border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,.42) 0%, rgba(var(--ngl-tint2),.16) 38%, rgba(255,255,255,0) 68%); }
+.ngl-beam { position: absolute; width: 4px; border-radius: 2px; background: #fff; }
+.ngl-wash { position: absolute; width: 44px; background: linear-gradient(90deg, rgba(255,255,255,.5), rgba(var(--ngl-tint2),0)); }
+
+/* ---- title bar ---- */
+.ngl-subwin { position: absolute; left: 0; top: 88px; height: 50px; overflow: hidden; }
+.ngl-subin { position: absolute; left: 0; top: 0; height: 50px; }
+.ngl-sub { position: relative; display: flex; align-items: center; height: 50px; padding: 0 20px 0 19px; background: #fdfdfd;
+  font-family: "NGL Sans", sans-serif; font-size: 25px; font-weight: 400; white-space: nowrap; letter-spacing: 0; }
+.ngl-subtxt { display: inline-block; }
+.ngl-role { color: #4b4b4b; }
+.ngl-co { color: #0d0d0d; }
+.ngl-edge { position: absolute; left: -5px; top: 88px; width: 5px; height: 50px; background: var(--ngl-edge);
+  box-shadow: 0 0 6px var(--ngl-edge-glow); }
+.ngl-subwash { position: absolute; left: -60px; top: 0; width: 60px; height: 50px;
+  background: linear-gradient(90deg, rgba(var(--ngl-tint),0), rgba(var(--ngl-tint),.9)); }

@@ -1,0 +1,65 @@
+/* NestGen lower third v2 — geometry measured from "Lower Third Template.mp4" (1920x1080):
+   name bar 521x83 at 63,810 · title strip at 63,898, 51px tall · 2px purple edge on the strip's right end.
+   All sizes are in the template's own px; scale the root (.ngl) with a transform to resize. */
+@font-face { font-family: "NGL Disco"; src: url(assets/fonts/BriallenDisco-Regular.ttf) format("truetype"); font-weight: 400; }
+@font-face { font-family: "NGL Geist"; src: url(assets/fonts/Geist-Regular.otf) format("opentype"); font-weight: 400; }
+
+.ngl { position: absolute; width: 700px; height: 150px; transform-origin: 0 0;
+  /* sampled: left (98,0,184) -> top-centre lift (117,23,191) -> right (68,8,112) top / (47,3,86) bottom */
+  --ngl-bar: linear-gradient(90deg, #6000b6 0%, #6200b8 25%, #6202b3 50%, #5a04a8 65%, #4a0690 80%, #3c0676 92%, #370670 100%);
+  --ngl-hi: rgba(160, 70, 225, .36); --ngl-hi0: rgba(160, 70, 225, 0); --ngl-shade: rgba(10, 0, 26, .3);
+  --ngl-edge: #9a2ad2; --ngl-edge-glow: rgba(150, 40, 210, .9); --ngl-edge-glow2: rgba(110, 10, 180, .75);
+  --ngl-trail: rgb(125, 0, 200); --ngl-wash: 216,166,251; --ngl-beamwash: 235,215,255; }
+/* blue theme: bright blue -> dark navy */
+.ngl.ngl--blue {
+  --ngl-bar: linear-gradient(90deg, #1257f0 0%, #1459f4 25%, #1450e4 50%, #1242c4 65%, #0e32a0 80%, #0b2480 92%, #0a1c6a 100%);
+  --ngl-hi: rgba(90, 160, 255, .32); --ngl-hi0: rgba(90, 160, 255, 0); --ngl-shade: rgba(0, 8, 40, .3);
+  --ngl-edge: #2a78ff; --ngl-edge-glow: rgba(40, 110, 240, .9); --ngl-edge-glow2: rgba(20, 70, 200, .75);
+  --ngl-trail: rgb(20, 90, 240); --ngl-wash: 170,205,255; --ngl-beamwash: 205,225,255; }
+
+/* ---- name bar (revealed through a window that follows the light beam) ---- */
+.ngl-win { position: absolute; left: 0; top: 0; height: 83px; overflow: hidden; }
+.ngl-bar { position: relative; height: 83px; overflow: hidden;
+  background:
+    radial-gradient(ellipse 40% 90% at 55% 0%, var(--ngl-hi), var(--ngl-hi0) 75%),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0) 10%, var(--ngl-shade) 100%),
+    var(--ngl-bar); }
+.ngl-name { position: absolute; left: 17px; top: -1px; height: 83px; display: flex; align-items: center; white-space: nowrap;
+  font-family: "NGL Disco", "NGL Geist", serif; font-weight: 400; font-size: 68px; line-height: 1; color: #fff;
+  letter-spacing: -0.7px; -webkit-text-stroke: 0.35px #fff; }
+.ngl-name-in { display: inline-block; white-space: nowrap; transform-origin: 0 50%; }
+.ngl-ch { display: inline-block; transform-origin: 100% 50%; }
+.ngl-sp { display: inline-block; width: .25em; }
+.ngl-wash { position: absolute; left: 0; top: 0; width: 44px;
+  background: linear-gradient(90deg, rgba(var(--ngl-beamwash), .55), rgba(var(--ngl-beamwash), 0)); }
+
+/* ---- light (bracket segments, beam; glow is an SVG filter set inline) ---- */
+.ngl-light { position: absolute; left: 0; top: 0; width: 1px; height: 1px; }
+.ngl-seg { position: absolute; }
+.ngl-segwin { position: absolute; left: 0; top: 0; overflow: hidden; }
+.ngl-seg i { position: absolute; left: 0; top: 0; background: #fff; border-radius: 1px; transform-origin: 0 50%; display: block; }
+.ngl-beam { position: absolute; width: 2.5px; background: #fff; }
+.ngl-ghosts { position: absolute; left: 0; top: 0; width: 1px; height: 1px; filter: blur(9px); }
+.ngl-ghost { position: absolute; width: 65px; height: 14px; transform-origin: 100% 50%; background: linear-gradient(90deg, transparent, var(--ngl-trail) 60%); }
+.ngl-halo { position: absolute; width: 600px; height: 600px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,.08) 0%, rgba(255,255,255,.07) 30%, rgba(255,255,255,.045) 50%, rgba(255,255,255,0) 70%); }
+
+/* one-frame additive bloom (source f36): +37 at 40px, +26 at 90px, +14 at 160px, gone by 400px */
+.ngl-flash { position: absolute; width: 900px; height: 900px; border-radius: 50%; pointer-events: none; mix-blend-mode: plus-lighter;
+  background: radial-gradient(circle, rgba(255,255,255,.14) 0%, rgba(255,255,255,.147) 9%, rgba(255,255,255,.13) 13%, rgba(255,255,255,.1) 20%,
+    rgba(255,255,255,.08) 27%, rgba(255,255,255,.056) 36%, rgba(255,255,255,.039) 44%, rgba(255,255,255,.023) 58%, rgba(255,255,255,.012) 71%,
+    rgba(255,255,255,.004) 89%, rgba(255,255,255,0) 100%); }
+
+/* ---- title strip ---- */
+.ngl-subwin { position: absolute; left: 0; top: 88px; height: 51px; overflow: hidden; }
+.ngl-subin { position: absolute; left: 0; top: 0; height: 51px; }
+.ngl-sub { position: relative; display: flex; align-items: center; height: 51px; padding: 0 24px 3px 19px; background: #fdfdfd;
+  font-family: "NGL Geist", sans-serif; font-size: 26px; font-weight: 400; white-space: nowrap; letter-spacing: .35px; -webkit-text-stroke: 0.2px currentColor; }
+.ngl-subtxt { display: inline-block; }
+.ngl-role { color: #434343; }
+.ngl-co { color: #000; }
+.ngl-subwash { position: absolute; top: 0; width: 30px; height: 51px; transform-origin: 100% 50%;
+  background: linear-gradient(90deg, rgba(var(--ngl-wash), 0), rgba(var(--ngl-wash), 1)); }
+/* edge: 4px line anchored at its right end; settles to 2px (scaleX .5) */
+.ngl-edge { position: absolute; left: -2px; top: 88px; width: 4px; height: 51px; background: var(--ngl-edge);
+  transform-origin: 100% 50%; box-shadow: 0 0 5px var(--ngl-edge-glow), 0 0 18px var(--ngl-edge-glow2); }

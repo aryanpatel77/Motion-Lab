@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en" data-composition-variables='[
+  {"id":"name","type":"string","label":"Name","default":"Nitin Gupta"},
+  {"id":"title","type":"string","label":"Title","default":"Founder & CEO"},
+  {"id":"company","type":"string","label":"Company (optional)","default":"FlytBase"},
+  {"id":"bg","type":"enum","label":"Background","default":"black","options":[{"value":"black","label":"Black (as the source)"},{"value":"green","label":"Green screen"},{"value":"red","label":"Red screen (chroma key)"},{"value":"dark","label":"Dark"},{"value":"none","label":"Transparent"}]},
+  {"id":"theme","type":"enum","label":"Colour","default":"purple","options":[{"value":"purple","label":"Purple (original)"},{"value":"blue","label":"Blue"}]},
+  {"id":"gradFrom","type":"color","label":"Gradient from (optional, overrides colour)","default":""},
+  {"id":"gradTo","type":"color","label":"Gradient to","default":""},
+  {"id":"outro","type":"boolean","label":"Play outro","default":true}
+]'>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<link rel="stylesheet" href="lower-third.css" />
+<script src="lower-third.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: transparent; }
+  #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+  #bg { position: absolute; inset: 0; }
+  #lt { position: absolute; left: 63px; top: 810px; width: 700px; height: 150px; }
+</style>
+</head>
+<body>
+<!-- 191 frames @ 29.97 = the source's length: intro from frame 1, outro finishes on frame 189 -->
+<div id="root" data-composition-id="main" data-start="0" data-duration="6.373" data-width="1920" data-height="1080">
+  <div id="bg"></div>
+  <div id="lt" class="clip" data-start="0" data-duration="6.373" data-track-index="1"></div>
+</div>
+<script>
+  window.__timelines = window.__timelines || {};
+  const F = 1 / 29.97;
+  const v = (window.__hyperframes && window.__hyperframes.getVariables && window.__hyperframes.getVariables()) || {};
+  const opts = { name: v.name || "Nitin Gupta", title: v.title || "Founder & CEO", company: v.company != null ? v.company : "FlytBase", theme: v.theme || "purple",
+                 gradient: v.gradFrom && v.gradTo ? [v.gradFrom, v.gradTo] : null };
+  const bg = v.bg || "black";
+  document.getElementById("bg").style.background = { green: "#43ff06", red: "#ff0000", dark: "#0b0a1f", black: "#000" }[bg] || "transparent";
+  document.getElementById("lt").innerHTML = NGLowerThird.html("lt0", opts);
+  const tl = gsap.timeline({ paused: true });
+  const outro = v.outro !== false;
+  NGLowerThird.animate(tl, "#lt0", { start: 0.2 * F, end: outro ? 189.8 * F : null, outro });
+  tl.set({}, {}, 6.373);
+  window.__timelines["main"] = tl;
+</script>
+</body>
+</html>

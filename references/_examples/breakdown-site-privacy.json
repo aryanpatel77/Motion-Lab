@@ -1,0 +1,25 @@
+{
+  "title": "Site Privacy: rebuilt from the Shapes launch film",
+  "ref_label": "Reference · Shapes launch film",
+  "ours_label": "Ours · Site Privacy v4",
+  "sections": [
+    {"name": "Collage opener", "technique": "Blobs and photos re-shuffle around a word card every 0.8 s", "ref": [0.0, 1.95], "ours": [0.0, 2.4]},
+    {"name": "Photos between words", "technique": "Photos pop open between words; the words glide aside", "ref": [1.95, 3.45], "ours": [2.4, 4.6]},
+    {"name": "Text beat and lockup", "technique": "A short typed beat, then a small calm lockup", "ref": [3.45, 5.53], "ours": [4.6, 6.7]},
+    {"name": "Words part for a carousel", "technique": "The phrase splits; cards roll card-to-card on a 3D wheel", "ref": [5.53, 9.3], "ours": [6.7, 10.3]},
+    {"name": "Shape morph", "technique": "Shapes nest in rotating layers, then peel into the icon", "ref": [9.3, 11.5], "ours": [10.3, 12.2]},
+    {"name": "Icon as cursor", "technique": "The icon glides over rebuilt UI; the camera pushes into what it touches", "ref": [11.5, 17.27], "ours": [12.2, 18.2]},
+    {"name": "Rolodex text", "technique": "Blurred lines scroll past one sharp focus line; the icon lands on one", "ref": [17.27, 21.6], "ours": [18.2, 22.4]},
+    {"name": "Toggle and zoom-through", "technique": "Clutter swirls around a toggle; it flips and the camera zooms through", "ref": [31.4, 34.3], "ours": [22.4, 25.4]},
+    {"name": "Card reveal", "technique": "A photo card lands with a soft settle while the camera drifts", "ref": [28.87, 31.4], "ours": [25.4, 31.4]},
+    {"name": "Thinking steps", "technique": "Steps appear one by one, the newest highlighted", "ref": [23.0, 25.33], "ours": [31.4, 34.4]},
+    {"name": "Cards with bubbles", "technique": "Content card with chat-style bubbles answering underneath", "ref": [25.33, 28.87], "ours": [34.4, 42.4]},
+    {"name": "Photos between words, again", "technique": "Same inline-photo sentence, reused as a before/after", "ref": [1.95, 3.45], "ours": [42.4, 45.4]},
+    {"name": "Words part, second carousel", "technique": "Same split and stepped carousel for the requirements", "ref": [41.0, 45.1], "ours": [45.4, 50.8]},
+    {"name": "Icon pushes into a path", "technique": "The icon moves stop to stop; the camera follows", "ref": [60.0, 64.77], "ours": [50.8, 56.2]},
+    {"name": "Notification expands", "technique": "Glass notification; the icon taps it open into a list", "ref": [33.0, 38.87], "ours": [56.2, 60.6]},
+    {"name": "Words around a collage", "technique": "The phrase parts and photos stack in between", "ref": [64.77, 66.83], "ours": [60.6, 63.4]},
+    {"name": "Word tokens", "technique": "Words ride an overlapping row of rotating shape tokens", "ref": [66.83, 70.2], "ours": [63.4, 67.0]},
+    {"name": "Lockup", "technique": "Shapes collapse into the icon; the name settles beside it", "ref": [70.2, 73.23], "ours": [67.0, 70.0]}
+  ]
+}

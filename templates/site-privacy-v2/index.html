@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<title>Site Privacy</title>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Inter"; src: url(assets/fonts/Inter.woff2) format("woff2"); font-weight: 100 900; }
+:root { --bg: #F6F5F1; --ink: #1D1D1F; --soft: #8C8C90; --Y: #EFC53F; --L: #DCE36A; --B: #4767D9; --LB: #8FAEEA; --R: #E0473F; --P: #5B1C40; --G: #2E6B3E; --M: #C9DDD6; --geo: #33C25A; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+#root { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); font-family: "Inter", sans-serif; color: var(--ink); }
+.full { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; }
+.clip { z-index: 2; } .clip.under { z-index: 0; }
+.abs { position: absolute; }
+.cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 960px 540px; }
+.vlayer { position: absolute; overflow: hidden; z-index: 1; opacity: 0; }
+.vlayer video { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+/* type: small, calm, centred (the shapes do the shouting) */
+.line { position: absolute; left: 0; top: 0; width: 1920px; display: flex; justify-content: center; align-items: center; white-space: nowrap; font-weight: 500; letter-spacing: -0.02em; }
+.it { display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.slot { overflow: visible; }
+.ph { border-radius: 10px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,.14); background: #ddd; }
+.ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card { position: absolute; background: #fff; border-radius: 16px; box-shadow: 0 18px 44px rgba(30,30,40,.12); overflow: hidden; }
+.glass { position: absolute; background: rgba(28,29,33,.78); border: 1px solid rgba(255,255,255,.09); border-radius: 22px; color: #F2F2F4; box-shadow: 0 30px 80px rgba(0,0,0,.35); backdrop-filter: blur(18px); }
+.row { height: 64px; display: flex; align-items: center; gap: 16px; padding: 0 28px; font-size: 24px; color: #EDEDF0; }
+.row .lbl { flex: 1; white-space: nowrap; }
+.beta { font-size: 14px; font-weight: 600; letter-spacing: .08em; color: #8CA9FF; border: 1px solid #5470C4; border-radius: 5px; padding: 3px 8px; }
+.tg { width: 56px; height: 32px; border-radius: 16px; background: #55565D; position: relative; flex: none; }
+.tg.on { background: #3B6CF6; }
+.tg i { position: absolute; top: 4px; left: 4px; width: 24px; height: 24px; border-radius: 50%; background: #fff; }
+.tg.on i { transform: translateX(24px); }
+.pill { position: absolute; display: flex; align-items: center; gap: 18px; height: 92px; padding: 0 30px 0 34px; border-radius: 46px; background: #ECEBE6; font-size: 34px; font-weight: 500; white-space: nowrap; }
+.pill .tg { width: 104px; height: 60px; border-radius: 30px; background: #fff; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
+.pill .tg i { width: 50px; height: 50px; top: 5px; left: 5px; background: #fff; box-shadow: 0 3px 10px rgba(0,0,0,.18); }
+.rl-line { position: absolute; left: 0; width: 1920px; text-align: center; font-size: 44px; font-weight: 500; letter-spacing: -0.02em; white-space: nowrap; }
+.step { font-size: 30px; display: flex; align-items: center; gap: 14px; color: #6F6F74; }
+.step b { color: var(--ink); font-weight: 500; }
+.bubble { position: absolute; padding: 20px 28px; border-radius: 22px; background: #E9E7E1; font-size: 30px; font-weight: 500; white-space: nowrap; }
+.chip { display: inline-flex; align-items: center; gap: 12px; height: 64px; padding: 0 26px; border-radius: 32px; background: #fff; font-size: 26px; font-weight: 500; box-shadow: 0 8px 24px rgba(0,0,0,.08); white-space: nowrap; }
+.chip i { width: 14px; height: 14px; border-radius: 50%; display: block; }
+.ccard { position: absolute; left: -170px; width: 340px; height: 92px; border-radius: 16px; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.08); display: flex; align-items: center; gap: 18px; padding: 0 22px; }
+.ccard small { display: block; font-size: 13px; color: #66666C; letter-spacing: .02em; }
+.ccard b { display: block; font-size: 22px; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
+.note { position: absolute; display: flex; align-items: center; gap: 18px; font-size: 26px; color: #E9E9EC; height: 60px; padding: 0 22px; border-radius: 14px; background: rgba(255,255,255,.06); }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="70" data-width="1920" data-height="1080">
+  <!-- footage: authored statically (the renderer pre-extracts frames from markup); the script only places and moves them -->
+  <div id="vl-reach" class="vlayer"><video id="v-reach" src="assets/clips/reach.mp4" data-start="12.2" data-duration="4.0" data-media-start="0.3" data-track-index="40" muted playsinline></video></div>
+  <div id="vl-zones_on" class="vlayer"><video id="v-zones_on" src="assets/clips/zones_on.mp4" data-start="16.2" data-duration="2.0" data-media-start="0.1" data-track-index="41" muted playsinline></video></div>
+  <div id="vl-tracking" class="vlayer"><video id="v-tracking" src="assets/clips/tracking.mp4" data-start="34.4" data-duration="3.6" data-media-start="0.4" data-track-index="42" muted playsinline></video></div>
+  <div id="vl-outside" class="vlayer"><video id="v-outside" src="assets/clips/outside.mp4" data-start="38.0" data-duration="2.3" data-media-start="1.2" data-track-index="43" muted playsinline></video></div>
+  <div id="vl-swingback" class="vlayer"><video id="v-swingback" src="assets/clips/swingback.mp4" data-start="40.3" data-duration="2.1" data-media-start="0.3" data-track-index="44" muted playsinline></video></div>
+</div>
+<script>
+/* =============================================================================================
+   Site Privacy — light motion-graphics product film (70 s). Structure mirrors the reference
+   launch film beat for beat: collage opener · inline-photo sentence · lockup · word-split
+   carousel · shape-swirl morph · mascot-cursor UI · rolodex text · clutter toggle → zoom-through ·
+   thinking steps · footage cards · carousel · hopping steps · glass notes · word-pill finale.
+   ============================================================================================= */
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({ paused: true });
+const root = document.getElementById("root");
+const FPS = 30;
+const OFF = 0, DUR = 70;                                         // render slice (part files override this line)
+let track = 1, uid = 0;
+const C = { Y: "#EFC53F", L: "#DCE36A", B: "#4767D9", LB: "#8FAEEA", R: "#E0473F", P: "#5B1C40", G: "#2E6B3E", M: "#C9DDD6", W: "#FBF8E8" };
+function clip(t0, t1, under = false) {
+  const d = document.createElement("div");
+  d.className = "clip full" + (under ? " under" : ""); d.id = "s" + (uid++);
+  let s0 = Math.max(0, t0 - OFF - 0.001), e0 = t1 - OFF - 0.001;
+  if (e0 <= 0 || s0 >= DUR) { s0 = DUR + 5; e0 = DUR + 6; }          // outside this render slice: never shown
+  d.dataset.start = s0.toFixed(4); d.dataset.duration = Math.max(0.034, e0 - s0).toFixed(4); d.dataset.trackIndex = String(track++);
+  root.appendChild(d); return d;
+}
+function el(parent, tag, cls, style, html) {
+  const e = document.createElement(tag); if (cls) e.className = cls; if (style) e.setAttribute("style", style);
+  if (html != null) e.innerHTML = html; parent.appendChild(e); return e;
+}
+const img = n => `assets/img/${n}.jpg`;
+function rng(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+/* per-frame driver: props are functions of absolute time */
+function drive(target, t0, t1, props) {
+  const at = t => { const o = {}; for (const k in props) o[k] = props[k](t); return o; };
+  tl.set(target, at(t0), t0);
+  const n = Math.round((t1 - t0) * FPS);
+  for (let i = 0; i < n; i++) { const a = t0 + i / FPS, b = t0 + (i + 1) / FPS; tl.to(target, { ...at(b), duration: 1 / FPS, ease: "none" }, a); }
+}
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const easeIO = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+
+/* ---- flat shapes (rounded via a fat same-colour stroke) ---------------------------------- */
+function polyPts(n, r, rot = 0, cx = 0, cy = 0) {
+  return Array.from({ length: n }, (_, i) => { const a = rot + i * 2 * Math.PI / n; return `${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`; }).join(" ");
+}
+function shapeSVG(kind, size, color) {
+  const s = size, h = s / 2, r = h * 0.78, sw = s * 0.16;
+  const inner = {
+    hex: `<polygon points="${polyPts(6, r, Math.PI / 6, h, h)}" fill="${color}" stroke="${color}" stroke-width="${sw}" stroke-linejoin="round"/>`,
+    oct: `<polygon points="${polyPts(8, r, Math.PI / 8, h, h)}" fill="${color}" stroke="${color}" stroke-width="${sw}" stroke-linejoin="round"/>`,
+    sq: `<rect x="${s * .14}" y="${s * .14}" width="${s * .72}" height="${s * .72}" rx="${s * .18}" fill="${color}"/>`,
+    dia: `<polygon points="${polyPts(4, r, 0, h, h)}" fill="${color}" stroke="${color}" stroke-width="${sw}" stroke-linejoin="round"/>`,
+    circ: `<circle cx="${h}" cy="${h}" r="${h * .9}" fill="${color}"/>`,
+    blob: `<path d="M${s*.2},${s*.15} C${s*.6},${s*.0} ${s*.95},${s*.2} ${s*.88},${s*.55} C${s*.82},${s*.9} ${s*.4},${s*.98} ${s*.15},${s*.8} C${-s*.02},${s*.62} ${-s*.02},${s*.28} ${s*.2},${s*.15}Z" fill="${color}"/>`,
+  }[kind];
+  return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" style="overflow:visible;display:block">${inner}</svg>`;
+}
+function shape(parent, kind, size, color, x, y, style = "") {
+  return el(parent, "div", "abs", `left:${x - size / 2}px;top:${y - size / 2}px;width:${size}px;height:${size}px;${style}`, shapeSVG(kind, size, color));
+}
+/* ---- mascot: the "privacy lens" (yellow hexagon ring, soft lens inside) ------------------- */
+function mascotSVG(size, ring = C.Y) {
+  const h = size / 2;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="overflow:visible;display:block">
+    <polygon points="${polyPts(6, h * .74, Math.PI / 6, h, h)}" fill="#fff" fill-opacity=".95" stroke="${ring}" stroke-width="${size * .15}" stroke-linejoin="round"/>
+    <circle cx="${h}" cy="${h}" r="${h * .3}" fill="${ring}" opacity=".35"/><circle cx="${h}" cy="${h}" r="${h * .17}" fill="${ring}"/></svg>`;
+}
+function mascot(parent, size, x, y) {
+  const m = el(parent, "div", "abs", `left:${-size / 2}px;top:${-size / 2}px;width:${size}px;height:${size}px;z-index:30;filter:drop-shadow(0 6px 14px rgba(0,0,0,.18))`, mascotSVG(size));
+  gsap.set(m, { x, y }); return m;
+}
+function ping(parent, x, y, t, color = "#fff") {
+  const r = el(parent, "div", "abs", `left:-60px;top:-60px;width:120px;height:120px;border-radius:50%;border:3px solid ${color};box-shadow:0 0 22px ${color};z-index:29;opacity:0`);
+  tl.fromTo(r, { x, y, scale: .55, opacity: .7 }, { scale: 1.15, opacity: 0, duration: .6, ease: "power2.out" }, t);
+}
+function tap(m, t) { tl.to(m, { scale: .88, duration: .1, ease: "power2.inOut" }, t); tl.to(m, { scale: 1, duration: .3, ease: "power3.out" }, t + .1); }
+
+/* ---- kinetic line with inline slots: words reflow as photos open (transforms only) -------- */
+function sentence(parent, y, size, items, opts = {}) {
+  // items: ["word", {img, w, h, at}] ; words reveal on opts.t + i*stagger
+  const line = el(parent, "div", "line", `top:${y - size}px;height:${size * 2}px;font-size:${size}px;gap:${size * .32}px`);
+  const parts = items.map(it => {
+    if (typeof it === "string") return { e: el(line, "span", "it", "", it), w: 0 };
+    const s = el(line, "div", "it slot", `width:${it.w}px;height:${it.h}px`);
+    const ph = el(s, "div", "ph", `width:${it.w}px;height:${it.h}px`); el(ph, "img").src = img(it.img);
+    return { e: s, ph, w: it.w + size * .32, at: it.at, rot: it.rot ?? 0 };
+  });
+  const slots = parts.filter(p => p.w);
+  const offs = opened => parts.map((p, k) => {
+    let before = 0, total = 0;
+    slots.forEach(s => { if (!opened.has(s)) { total += s.w; if (parts.indexOf(s) < k) before += s.w; } });
+    return -before + total / 2;
+  });
+  const opened = new Set();
+  parts.forEach((p, k) => gsap.set(p.e, { x: offs(opened)[k] }));
+  slots.forEach(s => gsap.set(s.ph, { scale: 0, opacity: 0, rotation: s.rot - 5 }));
+  [...slots].sort((a, b) => a.at - b.at).forEach(s => {
+    opened.add(s); const o = offs(new Set(opened));
+    parts.forEach((p, k) => tl.to(p.e, { x: o[k], duration: .32, ease: "power3.out" }, s.at));
+    tl.fromTo(s.ph, { scale: .62, opacity: 0 }, { scale: 1, opacity: 1, rotation: s.rot, duration: .22, ease: "power4.out" }, s.at);
+    tl.to(s.ph, { rotation: s.rot + (s.rot >= 0 ? 2.5 : -2.5), y: -6, duration: 2.2, ease: "sine.inOut" }, s.at + .22);
+  });
+  if (opts.t != null) parts.filter(p => !p.w).forEach((p, i) =>
+    tl.fromTo(p.e, { opacity: 0 }, { opacity: 1, duration: .12, ease: "power1.out" }, opts.t + i * (opts.stagger ?? .12)));
+  return line;
+}
+function words(parent, y, size, text, t, stagger = .09, style = "") {
+  const line = el(parent, "div", "line", `top:${y - size}px;height:${size * 2}px;font-size:${size}px;${style}`);
+  const ws = text.split(" ").map((w, i, a) => el(line, "span", "it", "", w + (i < a.length - 1 ? "&nbsp;" : "")));
+  tl.fromTo(ws, { opacity: 0, y: size * .12 }, { opacity: 1, y: 0, duration: .14, ease: "power2.out", stagger }, t);
+  return { line, ws };
+}
+/* ---- stepped 3D carousel: each card rolls up with eased weight, settles, holds in focus ---------- */
+function carousel(cam, items, t0, t1, period, rollFrac) {
+  const wheel = el(cam, "div", "abs", "left:960px;top:540px;width:0;height:0;perspective:900px;transform:scale(1.3)");
+  const cs = [...items, ...items].map(([t, sub, k, c]) => el(wheel, "div", "ccard", "top:-50px;left:-230px;width:460px;height:100px", `${shapeSVG(k, 50, c)}<div><b>${t}</b><small style="font-size:16px;margin-top:4px">${sub}</small></div>`));
+  gsap.set(cs, { opacity: 0 });
+  const SP = 128, N = cs.length, span = SP * N;
+  const pos = t => { const u = (t - t0) / period; const k = Math.floor(u), f = u - k; return (Math.max(0, k) + (u < 0 ? 0 : easeIO(clamp(f / rollFrac)))) * SP; };
+  cs.forEach((c, i) => {
+    const Y = t => { let yy = i * SP - pos(t); yy = ((yy % span) + span) % span; if (yy > span / 2) yy -= span; return yy; };
+    drive(c, t0, t1, { y: Y, rotationX: t => -Y(t) / 380 * 57.3, opacity: t => clamp(1.2 - Math.abs(Y(t)) / 360) * clamp((t - t0) / .35), filter: t => `blur(${clamp((Math.abs(Y(t)) - 60) / 50, 0, 4).toFixed(2)}px)`, scale: t => 1 + .06 * clamp(1 - Math.abs(Y(t)) / 60) });
+  });
+  return wheel;
+}
+/* ---- phrase that parts in the middle to make room (reference: "Meet your new | team members") */
+function split(parent, y, size, left, right, t, tOpen, gap, d = .6) {
+  const est = str => str.length * size * .52;                       // close-enough width estimate for centring
+  const shift = (est(left) - est(right)) / 2;
+  const L = el(parent, "div", "abs", `left:0;width:${960 - size * .14}px;top:${y - size * .7}px;text-align:right;font-size:${size}px;font-weight:500;letter-spacing:-0.02em;white-space:nowrap`, left);
+  const R = el(parent, "div", "abs", `left:${960 + size * .14}px;top:${y - size * .7}px;font-size:${size}px;font-weight:500;letter-spacing:-0.02em;white-space:nowrap`, right);
+  gsap.set([L, R], { x: shift });
+  tl.fromTo([L, R], { opacity: 0 }, { opacity: 1, duration: .12, ease: "power1.out", stagger: .1 }, t);
+  tl.to(L, { x: -gap, duration: d * .6, ease: "expo.out" }, tOpen); tl.to(R, { x: gap, duration: d * .6, ease: "expo.out" }, tOpen);
+  return { L, R };
+}
+/* ---- footage layer that rides a scene camera -------------------------------------------- */
+function vplace(id, x, y, w, h, radius, t0, t1, cam) {
+  const v = document.getElementById("vl-" + id) || el(root, "div", "vlayer");   // clip not in this render slice: stand-in
+  Object.assign(v.style, { left: x + "px", top: y + "px", width: w + "px", height: h + "px", borderRadius: radius + "px" });
+  gsap.set(v, { transformOrigin: `${960 - x}px ${540 - y}px` });
+  tl.set(v, { opacity: 1 }, t0); tl.set(v, { opacity: 0 }, t1);
+  if (cam) cam.followers.push(v);
+  return v;
+}
+function camera(parent) { const c = el(parent, "div", "cam"); c.followers = []; return c; }
+function camTo(cam, props, t, d, ease = "sine.inOut") { tl.to([cam, ...cam.followers], { ...props, duration: d, ease }, t); }
+
+/* ============ A  collage opener (0-2.4): blobs + photos re-shuffle around a word card ======= */
+{
+  const S = clip(0, 2.4);
+  const LAY = [
+    { word: "Your drone", shapes: [["blob", 760, C.B, 300, 260, -20], ["blob", 640, C.L, 1650, 800, 30], ["sq", 520, C.M, 1600, 180, 12]], photos: [["p_valley", 360, 240, 1480, 380, 8], ["p_house", 300, 200, 300, 800, -6]] },
+    { word: "sees", shapes: [["blob", 820, C.Y, 1640, 300, 60], ["blob", 700, C.B, 260, 820, -30], ["circ", 380, C.LB, 420, 160, 0]], photos: [["p_site", 340, 230, 330, 380, -8], ["p_farm", 320, 220, 1560, 780, 6]] },
+    { word: "everything.", shapes: [["blob", 760, C.R, 260, 300, 15], ["sq", 600, C.L, 1660, 760, -18], ["blob", 520, C.LB, 1640, 200, 40]], photos: [["p_kiln", 320, 230, 1500, 420, 7], ["p_road", 240, 300, 380, 760, -5], ["p_house", 280, 190, 820, 900, 4]] },
+  ];
+  LAY.forEach((L, i) => {
+    const t0 = i * 0.8, t1 = t0 + 0.8, g = el(S, "div", "full", "opacity:0");
+    tl.set(g, { opacity: 1 }, t0); if (i < 2) tl.set(g, { opacity: 0 }, t1);
+    const cam = el(g, "div", "cam");
+    L.shapes.forEach(([k, s, c, x, y, r]) => { const e = shape(cam, k, s, c, x, y); gsap.set(e, { rotation: r }); });
+    L.photos.forEach(([p, w, h, x, y, r], j) => { const e = el(cam, "div", "ph abs", `left:${x - w / 2}px;top:${y - h / 2}px;width:${w}px;height:${h}px`); el(e, "img").src = img(p);
+      tl.fromTo(e, { rotation: r, x: 0, y: 0 }, { rotation: r + (j % 2 ? 2 : -2), x: (j % 2 ? 14 : -14), y: -10, duration: .8, ease: "none" }, t0); });
+    const card = el(cam, "div", "abs", "left:330px;top:150px;width:1260px;height:780px;background:#F3F2EE;box-shadow:0 30px 80px rgba(0,0,0,.12)");
+    el(card, "div", "line", "top:330px;height:120px;width:1260px;font-size:84px;font-weight:500", i === 0 ? `<span class="it">${L.word}</span>` : `<span class="it">${L.word}</span>`);
+    gsap.set(card, { rotation: [-2.5, 1.8, -1.2][i] });
+    tl.fromTo(cam, { scale: 1.06, rotation: [1, -1, .6][i] }, { scale: 1.0, rotation: 0, duration: .8, ease: "power2.out" }, t0);
+  });
+}
+
+/* ============ B  inline-photo sentence (2.4-4.6) ========================================== */
+{
+  const S = clip(2.4, 4.6); const cam = el(S, "div", "cam");
+  sentence(cam, 540, 64, ["Even", { img: "p_house", w: 170, h: 116, at: 2.75, rot: -4 }, "next", { img: "p_site", w: 170, h: 116, at: 3.25, rot: 5 }, "door?"], { t: 2.45, stagger: .25 });
+  tl.fromTo(cam, { scale: 1 }, { scale: 1.06, duration: 2.2, ease: "none" }, 2.4);
+}
+
+/* ============ C/D  "Not anymore." → lockup (4.6-6.7) ======================================== */
+{
+  const S = clip(4.6, 5.6); words(S, 540, 52, "Not anymore.", 4.62, .22);
+  const L = clip(5.6, 6.7); const cam = el(L, "div", "cam");
+  const m = el(cam, "div", "abs", "left:770px;top:493px;width:94px;height:94px", mascotSVG(94));
+  const t = el(cam, "div", "abs", "left:884px;top:500px;font-size:66px;font-weight:600;letter-spacing:-0.03em;white-space:nowrap", "Site Privacy");
+  tl.fromTo(m, { scale: 0, rotation: -120 }, { scale: 1, rotation: 0, duration: .6, ease: "power3.out" }, 5.6);
+  tl.fromTo(t, { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: .5, ease: "power3.out" }, 5.78);
+  tl.fromTo(cam, { scale: 1 }, { scale: 1.05, duration: 1.1, ease: "none" }, 5.6);
+}
+
+/* ============ E  word split + 3D carousel (6.7-10.3) ======================================= */
+{
+  const S = clip(6.7, 10.3); const cam = el(S, "div", "cam");
+  split(cam, 540, 50, "Keep", "out of view", 6.72, 7.2, 345);
+  carousel(cam, [["Neighbouring homes", "Outside your geofence", "hex", C.R], ["Public roads", "Outside your geofence", "dia", C.P], ["Passing vehicles", "Outside your geofence", "circ", C.Y],
+    ["Farmland next door", "Outside your geofence", "sq", C.L], ["Private yards", "Outside your geofence", "dia", C.G], ["People nearby", "Outside your geofence", "sq", C.M]], 7.3, 10.3, .6, .6);
+  tl.fromTo(cam, { scale: 1 }, { scale: 1.08, duration: 3.6, ease: "none" }, 6.7);
+}
+
+/* ============ F  shape morph → mascot (10.3-12.2): pop, nest concentrically, rotate, peel ===== */
+{
+  const S = clip(10.3, 12.2);
+  const g = el(S, "div", "abs", "left:960px;top:540px;width:0;height:0");
+  const spin = el(g, "div", "abs", "left:0;top:0;width:0;height:0");
+  // [kind, size when nested, colour, scattered offset x, y, extra spin, peel time]
+  const L = [["oct", 600, C.P, 210, -60, 40, 11.28], ["sq", 470, C.B, -170, 70, -60, 11.36], ["hex", 360, C.L, 120, 120, 80, 11.44], ["circ", 260, C.LB, -90, -110, 0, 11.5], ["circ", 170, "#FFFFFF", 0, 0, 0, 11.56]];
+  L.forEach(([k, sz, c, x, y, rot, peel], i) => {
+    const e = shape(spin, k, sz, c, 0, 0);
+    const t0 = 10.3 + i * .045;
+    tl.fromTo(e, { x: x * 1.5, y: y * 1.5, scale: .35, opacity: 0, rotation: rot - 40 }, { x, y, scale: i === 4 ? 0 : .78, opacity: 1, rotation: rot, duration: .24, ease: "power4.out" }, t0);
+    tl.to(e, { x: 0, y: 0, scale: 1, rotation: rot + 70, duration: .5, ease: "power3.inOut" }, 10.6 + i * .03);
+    tl.to(e, { scale: 0, rotation: rot + 150, duration: .3, ease: "power3.in" }, peel);
+  });
+  tl.fromTo(spin, { rotation: 0 }, { rotation: 150, duration: 1.3, ease: "power2.inOut" }, 10.4);
+  const m = el(g, "div", "abs", "left:-90px;top:-90px;width:180px;height:180px", mascotSVG(180));
+  tl.fromTo(m, { scale: .3, rotation: -150, opacity: 0 }, { scale: 1, rotation: 0, opacity: 1, duration: .6, ease: "power3.out" }, 11.42);
+  tl.to(m, { rotation: 12, scale: 1.03, duration: .5, ease: "sine.inOut" }, 11.95);
+}
+
+/* ============ G  cockpit UI with the mascot as cursor (12.2-18.2) =========================== */
+{
+  const B = clip(12.2, 18.2, true);                                   // blurred-footage backdrop (under the video)
+  const bg = el(B, "img", "abs", "left:-80px;top:-80px;width:2080px;height:1240px;object-fit:cover;filter:blur(48px) saturate(1.35) brightness(.9)"); bg.src = img("p_valley");
+  el(B, "div", "full", "background:linear-gradient(160deg, rgba(40,90,120,.55), rgba(20,30,40,.15) 50%, rgba(220,80,60,.35))");
+  const S = clip(12.2, 18.2); const cam = camera(S);
+  // window chrome (drawn on the backdrop layer so the live feed sits on top of it)
+  const winX = 300, winY = 150, winW = 1320, winH = 780;
+  const wb = camera(B); cam.followers.push(wb);
+  el(wb, "div", "glass", `left:${winX}px;top:${winY}px;width:${winW}px;height:${winH}px`);
+  const fx = winX + 24, fy = winY + 64, fw = winW - 48, fh = winH - 88;
+  el(cam, "div", "abs", `left:${winX + 28}px;top:${winY + 20}px;font-size:20px;color:#E6E6EA;display:flex;gap:12px;align-items:center`, `<i style="width:10px;height:10px;border-radius:50%;background:#FF5A4E;display:block"></i>Live · Payload camera`);
+  vplace("reach", fx, fy, fw, fh, 14, 12.2, 16.2, cam);
+  vplace("zones_on", fx, fy, fw, fh, 14, 16.2, 18.2, cam);
+  const bar = el(cam, "div", "abs", `left:${fx + fw - 238}px;top:${fy + fh - 96}px;display:flex;gap:14px`,
+    ["map", "gauge", "stack"].map((k, i) => `<div style="width:66px;height:66px;border-radius:14px;background:${i === 2 ? "#3B6CF6" : "rgba(30,31,35,.86)"};border:1px solid rgba(255,255,255,.1)"></div>`).join(""));
+  const menu = el(cam, "div", "glass", `left:${fx + fw - 520}px;top:${fy + fh - 96 - 430}px;width:500px;padding:12px 0;border-radius:18px`,
+    [["Blur outside Geofence", 1, 0], ["Zone overlays", 0, 0], ["AI detections", 0, 1], ["Zone proximity warnings", 0, 1], ["Live annotations", 0, 1], ["Instruments", 0, 1]]
+      .map(([l, b, on]) => `<div class="row"><span class="lbl">${l}</span>${b ? '<span class="beta">BETA</span>' : ""}<div class="tg${on ? " on" : ""}"><i></i></div></div>`).join(""));
+  gsap.set(menu, { transformOrigin: "100% 100%" });
+  tl.fromTo(menu, { opacity: 0, scale: .94, y: 12 }, { opacity: 1, scale: 1, y: 0, duration: .3, ease: "power3.out" }, 14.0);
+  const zt = menu.querySelectorAll(".tg")[1];
+  tl.to(zt.firstChild, { x: 24, duration: .22, ease: "power2.inOut" }, 15.65); tl.to(zt, { backgroundColor: "#3B6CF6", duration: .22 }, 15.65);
+  tl.to(menu, { opacity: 0, scale: .94, duration: .3, ease: "power2.in" }, 16.1);
+  const OX = fx + fw - 238 + 2 * 80 + 33, OY = fy + fh - 96 + 33;
+  const TX = fx + fw - 520 + 500 - 28 - 28, TY = fy + fh - 96 - 430 + 12 + 64 + 32;
+  const m = mascot(cam, 64, 1700, 980);
+  tl.fromTo(m, { x: 1820, y: 1100, rotation: -60 }, { x: OX, y: OY, rotation: 0, duration: 1.2, ease: "power3.inOut" }, 12.5);
+  tap(m, 13.8); ping(cam, OX, OY, 13.85);
+  tl.to(m, { x: TX, y: TY, duration: .8, ease: "power3.inOut" }, 14.6);
+  tap(m, 15.55); ping(cam, TX, TY, 15.6);
+  tl.to(m, { x: 1240, y: 420, duration: 1.0, ease: "power2.inOut" }, 16.3);
+  // camera: settle in, push to the menu, pull back to the lit-up geofence
+  camTo(cam, { scale: 1.02 }, 12.2, 1.6);
+  camTo(cam, { scale: 1.55, x: -480, y: -230 }, 14.15, 1.0, "power3.inOut");
+  camTo(cam, { scale: 1.08, x: 0, y: 0 }, 16.05, .9, "power3.inOut");
+  camTo(cam, { scale: 1.14 }, 16.95, 1.25, "none");
+  const cap = words(cam, 1010, 28, "Zone overlays: your geofence, on the live video.", 16.5, .05, "color:#fff");
+}
+
+/* ============ H  rolodex text (18.2-22.4) ================================================== */
+{
+  const S = clip(18.2, 22.4);
+  const LINES = ["Your dock", "Your solar rows", "Your fence line", "Your access road", "Your stockyard", "Your control room", "The highway", "A passing car", "The farm next door", "The neighbour's backyard", "A school playground", "The houses down the lane"];
+  const STOP = 9, GAP = 66;
+  const scroll = t => { const p = clamp((t - 18.2) / 2.6); return (STOP + 0.0) * GAP * (1 - Math.pow(1 - p, 3)) - 4 * GAP * (1 - p); };
+  const ls = LINES.map((L, i) => el(S, "div", "rl-line", "top:0", L));
+  ls.forEach((l, i) => drive(l, 18.2, 22.4, {
+    y: t => 540 - 26 + i * GAP - scroll(t),
+    opacity: t => { const d = Math.abs(i * GAP - scroll(t)); const o = clamp(1 - d / 360) * .9 + (d < 30 ? .1 : 0); return i === STOP ? o : o * (1 - clamp((t - 20.95) / .35)); },
+    filter: t => `blur(${clamp((Math.abs(i * GAP - scroll(t)) - 18) / 22, 0, 5).toFixed(2)}px)`,
+    color: t => (i === STOP && t > 20.9) ? "#E0473F" : "#1D1D1F",
+  }));
+  const m = mascot(S, 70, 1400, 540);
+  tl.fromTo(m, { x: 1500, y: 300, rotation: 90 }, { x: 1330, y: 540, rotation: 0, duration: .9, ease: "power3.out" }, 18.3);
+  tl.to(m, { x: 1290, duration: .45, ease: "power2.inOut" }, 20.5); tap(m, 20.9); ping(S, 1290, 540, 20.95, "#E0473F");
+  const no = el(S, "div", "abs", "left:0;width:1920px;top:640px;text-align:center;font-size:30px;color:#8C8C90;font-weight:500", "Not yours to see.");
+  tl.fromTo(no, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: .4, ease: "power3.out" }, 21.1);
+}
+
+/* ============ I  clutter toggle → zoom-through (22.4-25.4) ================================= */
+{
+  const S = clip(22.4, 25.4); const cam = el(S, "div", "cam");
+  const pill = el(cam, "div", "pill", "left:0;top:0", `<span>Blur outside Geofence</span><div class="tg"><i></i></div>`);
+  gsap.set(pill, { x: 960 - 290, y: 540 - 46 });
+  const knob = pill.querySelector(".tg i"), track_ = pill.querySelector(".tg");
+  const lab = el(cam, "div", "abs", "left:0;width:1920px;top:620px;text-align:center;font-size:24px;color:#8C8C90;font-weight:500", "Off");
+  const CL = [["p_house", 230, 150, -520, -230, -10], ["p_site", 200, 140, 470, -260, 8], ["p_road", 150, 200, -620, 150, 6], ["p_farm", 220, 150, 560, 200, -7], ["p_kiln", 180, 130, -180, 300, 4], ["p_valley", 210, 140, 260, 330, -5]];
+  const sh = [["dia", 70, C.B, -330, -330], ["circ", 60, C.Y, 640, -60], ["hex", 80, C.R, -700, -60], ["sq", 64, C.G, 120, -360]];
+  CL.forEach(([p, w, h, x, y, r], i) => {
+    const e = el(cam, "div", "ph abs", `left:${960 - w / 2}px;top:${540 - h / 2}px;width:${w}px;height:${h}px`); el(e, "img").src = img(p);
+    tl.fromTo(e, { x: x * .55, y: y * .55, scale: .5, opacity: 0, rotation: r - 8 }, { x, y, scale: 1, opacity: 1, rotation: r, duration: .4, ease: "power4.out" }, 22.45 + i * .07);
+    tl.to(e, { x: x * .97, y: y * .97 - 12, rotation: r + 3, duration: 1.0, ease: "sine.inOut" }, 23.0);
+    tl.to(e, { x: x * 2.6, y: y * 2.6, rotation: r * 3, scale: .7, opacity: 0, duration: .5, ease: "power3.in" }, 23.95 + i * .03);
+  });
+  sh.forEach(([k, s, c, x, y], i) => {
+    const e = shape(cam, k, s, c, 960, 540);
+    tl.fromTo(e, { x: x * .55, y: y * .55, scale: .4, opacity: 0 }, { x, y, scale: 1, opacity: 1, rotation: 40, duration: .4, ease: "power4.out" }, 22.55 + i * .07);
+    tl.to(e, { x: x * 2.4, y: y * 2.4, rotation: 220, opacity: 0, duration: .5, ease: "power3.in" }, 23.95 + i * .03);
+  });
+  const m = mascot(cam, 58, 1500, 900);
+  tl.fromTo(m, { x: 1600, y: 980 }, { x: 960 + 290 - 30 - 52, y: 540 + 4, duration: .9, ease: "power3.inOut" }, 22.9);
+  tap(m, 23.85);
+  tl.to(knob, { x: 44, duration: .25, ease: "power2.inOut" }, 23.9); tl.to(track_, { backgroundColor: "#EFC53F", duration: .25 }, 23.9);
+  tl.set(lab, { innerHTML: "On" }, 23.95);
+  tl.to(m, { opacity: 0, duration: .2 }, 24.3);
+  // zoom through the knob
+  gsap.set(cam, { transformOrigin: "1170px 544px" });
+  tl.to(cam, { scale: 7.5, duration: 1.0, ease: "power3.in" }, 24.4);
+  tl.fromTo(cam, { filter: "blur(0px)" }, { filter: "blur(16px)", duration: .7, ease: "power2.in" }, 24.7);
+}
+
+/* ============ J  the reveal: blur falls on everything outside (25.4-31.4) =================== */
+{
+  const S = clip(25.4, 31.4); const cam = el(S, "div", "cam");
+  const cw = 1440, ch = 810, cx = 960 - cw / 2, cy = 540 - ch / 2 - 30;
+  const card = el(cam, "div", "card", `left:${cx}px;top:${cy}px;width:${cw}px;height:${ch}px;border-radius:24px`);
+  el(card, "img", "", "position:absolute;inset:0;width:100%;height:100%;object-fit:cover").src = img("before");
+  const af = el(card, "img", "", "position:absolute;inset:0;width:100%;height:100%;object-fit:cover"); af.src = img("after");
+  // the blur arrives as a soft curtain from the sky down to the boundary
+  tl.fromTo(af, { clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0% 0)", duration: 1.5, ease: "power2.inOut" }, 26.6);
+  tl.fromTo(cam, { scale: 1.5, rotation: -3 }, { scale: 1, rotation: 0, duration: 1.1, ease: "expo.out" }, 25.4);
+  tl.fromTo(cam, { filter: "blur(12px)" }, { filter: "blur(0px)", duration: .45, ease: "power2.out" }, 25.4);
+  tl.to(cam, { scale: 1.06, duration: 4.9, ease: "none" }, 26.5);
+  const m = mascot(cam, 60, 1100, 520);
+  tl.fromTo(m, { x: 1300, y: 200, opacity: 0 }, { x: 1050, y: 400, opacity: 1, duration: .8, ease: "power3.out" }, 25.9);
+  tl.to(m, { y: 340, duration: 1.5, ease: "power2.inOut" }, 26.6);
+  tl.to(m, { x: 760, y: 470, duration: 1.2, ease: "power2.inOut" }, 28.3);
+  const b1 = el(cam, "div", "bubble", "left:0;top:0", "Outside the geofence goes soft"); gsap.set(b1, { x: cx + 40, y: cy + ch + 34 });
+  const b2 = el(cam, "div", "bubble", "left:0;top:0;background:#1D1D1F;color:#fff", "Your site stays sharp"); gsap.set(b2, { x: cx + cw - 400, y: cy + ch + 34 });
+  tl.fromTo(b1, { opacity: 0, y: cy + ch + 60 }, { opacity: 1, y: cy + ch + 34, duration: .35, ease: "power3.out" }, 27.6);
+  tl.fromTo(b2, { opacity: 0, y: cy + ch + 60 }, { opacity: 1, y: cy + ch + 34, duration: .35, ease: "power3.out" }, 28.5);
+}
+
+/* ============ K  "thinking" steps: how it keeps up (31.4-34.4) ============================== */
+{
+  const S = clip(31.4, 34.4);
+  el(S, "div", "full", "background:radial-gradient(90% 90% at 80% 10%, #F2E9DF, #F6F5F1 60%)");
+  const box = el(S, "div", "abs", "left:470px;top:280px;width:1100px;transform-origin:0 0;transform:scale(1.45)");
+  const hd = el(box, "div", "step", "font-size:34px;color:#EFC53F;font-weight:600;gap:16px", `${mascotSVG(40)}<span>Following the camera</span>`);
+  tl.fromTo(hd, { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: .4, ease: "power3.out" }, 31.5);
+  const ST = [["Drone moves", "blur re-projects"], ["Gimbal turns", "blur re-projects"], ["Camera zooms", "blur re-projects"], ["Every frame", "in real time"]];
+  ST.forEach(([a, b], i) => {
+    const r = el(box, "div", "step", `margin:22px 0 0 20px;padding-left:28px;border-left:3px solid #E4E2DC`, `<b>${a}</b><span>—</span><span class="hl">${b}</span>`);
+    tl.fromTo(r, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: .35, ease: "power3.out" }, 31.95 + i * .5);
+    tl.fromTo(r.querySelector(".hl"), { color: "#EFC53F" }, { color: "#6F6F74", duration: .6 }, 32.3 + i * .5);
+  });
+  tl.to(box, { y: -260, opacity: 0, duration: .6, ease: "power3.in" }, 33.8);
+}
+
+/* ============ L  footage cards: it tracks · fully outside · swing back (34.4-42.4) ========== */
+{
+  const B = clip(34.4, 42.4, true); el(B, "div", "full", "background:#F6F5F1");
+  const S = clip(34.4, 42.4); const cam = camera(S); const camB = camera(B); cam.followers.push(camB);
+  const vw = 1240, vh = 698, vx = 960 - vw / 2, vy = 540 - vh / 2 - 40;
+  el(camB, "div", "card", `left:${vx - 10}px;top:${vy - 10}px;width:${vw + 20}px;height:${vh + 20}px;border-radius:30px`);
+  vplace("tracking", vx, vy, vw, vh, 22, 34.4, 38.0, cam);
+  vplace("outside", vx, vy, vw, vh, 22, 38.0, 40.3, cam);
+  vplace("swingback", vx, vy, vw, vh, 22, 40.3, 42.4, cam);
+  const chips = el(cam, "div", "abs", `left:0;width:1920px;top:${vy + vh + 40}px;display:flex;justify-content:center;gap:18px`,
+    [["Drone moves", C.R], ["Gimbal turns", C.B], ["Camera zooms", C.G]].map(([t, c]) => `<div class="chip"><i style="background:${c}"></i>${t}</div>`).join(""));
+  chips.querySelectorAll(".chip").forEach((c, i) => tl.fromTo(c, { opacity: 0, y: 30, scale: .9 }, { opacity: 1, y: 0, scale: 1, duration: .35, ease: "power3.out" }, 34.9 + i * .35));
+  tl.to(chips, { opacity: 0, y: 20, duration: .3 }, 37.7);
+  const q1 = el(cam, "div", "bubble", `left:0;top:0;background:#1D1D1F;color:#fff`, "Fully outside? The whole feed stays private.");
+  gsap.set(q1, { x: 960 - 330, y: vy + vh + 34, opacity: 0 });
+  tl.to(q1, { opacity: 1, duration: .35 }, 38.2); tl.fromTo(q1, { scale: .94 }, { scale: 1, duration: .35, ease: "power3.out" }, 38.2); tl.to(q1, { opacity: 0, duration: .25 }, 40.1);
+  const q2 = el(cam, "div", "bubble", `left:0;top:0`, "Swing back, and your site snaps into focus.");
+  gsap.set(q2, { x: 960 - 320, y: vy + vh + 34, opacity: 0 });
+  tl.to(q2, { opacity: 1, duration: .35 }, 40.5); tl.fromTo(q2, { scale: .94 }, { scale: 1, duration: .35, ease: "power3.out" }, 40.5);
+  camTo(cam, { scale: 1.0, x: 0 }, 34.4, .01);
+  tl.fromTo([cam, ...cam.followers], { y: 380, rotation: 4 }, { y: 0, rotation: 0, duration: .9, ease: "expo.out" }, 34.4);
+  camTo(cam, { scale: 1.05, rotation: -1 }, 35.3, 2.7);
+  camTo(cam, { scale: 1.0, rotation: 1 }, 38.0, 2.3);
+  camTo(cam, { scale: 1.08, rotation: 0 }, 40.3, 2.1);
+}
+
+/* ============ M  "Same [before] flight. Same [after] camera." (42.4-45.4) =================== */
+{
+  const S = clip(42.4, 45.4); const cam = el(S, "div", "cam");
+  sentence(cam, 470, 58, ["Same", { img: "before", w: 260, h: 146, at: 42.7, rot: -3 }, "flight."], { t: 42.45, stagger: .2 });
+  sentence(cam, 640, 58, ["Same", { img: "after", w: 260, h: 146, at: 43.55, rot: 3 }, "camera."], { t: 43.3, stagger: .2 });
+  tl.fromTo(cam, { scale: 1 }, { scale: 1.07, duration: 3, ease: "none" }, 42.4);
+}
+
+/* ============ N  what you need: word split + carousel (45.4-50.8) ========================== */
+{
+  const S = clip(45.4, 50.8); const cam = el(S, "div", "cam");
+  split(cam, 540, 50, "All you", "need", 45.42, 45.85, 345);
+  const NEED = [["A geofence synced to the drone", "No-fly zones alone aren't enough", "hex", C.G], ["Fast link telemetry", "Selected in telemetry settings", "dia", C.B], ["Chrome or Edge", "With WebGPU and hardware acceleration", "circ", C.Y], ["The drone in flight", "The option appears once it's airborne", "sq", C.R]];
+  carousel(cam, NEED, 46.0, 50.8, 1.1, .45);
+  tl.fromTo(cam, { scale: 1 }, { scale: 1.06, duration: 5.4, ease: "none" }, 45.4);
+}
+
+/* ============ O  four steps: the mascot hops along (50.8-56.2) ============================= */
+{
+  const S = clip(50.8, 56.2); const cam = el(S, "div", "cam");
+  const ST = ["Open Cockpit", "Launch the flight", "Video overlays", "Blur outside Geofence"];
+  const X = [420, 800, 1180, 1560];
+  const stops = ST.map((s, i) => {
+    const g = el(cam, "div", "abs", `left:${X[i] - 170}px;top:470px;width:340px;text-align:center`);
+    const dot = el(g, "div", "", `width:120px;height:120px;margin:0 auto;border-radius:50%;background:#ECEBE6;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:600;color:#9A9AA0`, String(i + 1));
+    el(g, "div", "", "margin-top:26px;font-size:32px;font-weight:500;white-space:nowrap", s);
+    tl.fromTo(g, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: .45, ease: "power3.out" }, 50.9 + i * .12);
+    return dot;
+  });
+  const line = el(cam, "div", "abs", `left:${X[0]}px;top:529px;width:${X[3] - X[0]}px;height:3px;background:#E1DFD9;z-index:-1`);
+  const prog = el(cam, "div", "abs", `left:${X[0]}px;top:529px;width:${X[3] - X[0]}px;height:3px;background:#EFC53F;transform-origin:0 50%`);
+  const head = words(cam, 300, 46, "Turn it on in four steps.", 50.85, .07);
+  const m = mascot(cam, 76, X[0], 380);
+  tl.fromTo(m, { scale: 0 }, { scale: 1, duration: .35, ease: "power3.out" }, 51.3);
+  const T0 = 51.6, HOP = .95;
+  tl.set(prog, { scaleX: 0 }, 50.8);
+  X.forEach((x, i) => {
+    const t = T0 + i * HOP;
+    if (i > 0) {
+      tl.to(m, { x, duration: .5, ease: "power2.inOut" }, t - .5);
+      tl.to(m, { y: 300, duration: .25, ease: "power2.out" }, t - .5); tl.to(m, { y: 380, duration: .25, ease: "power2.in" }, t - .25);
+      tl.to(prog, { scaleX: i / 3, duration: .5, ease: "power2.inOut" }, t - .5);
+    }
+    tl.to(m, { y: 470, duration: .14, ease: "power2.in" }, t + .02); tl.to(m, { y: 380, duration: .25, ease: "back.out(2)" }, t + .16);
+    tl.to(stops[i], { backgroundColor: "#EFC53F", color: "#1D1D1F", scale: 1.08, duration: .2 }, t + .1);
+    ping(cam, x, 530, t + .12, "#EFC53F");
+  });
+  tl.fromTo(cam, { x: 70 }, { x: -70, duration: 5.4, ease: "sine.inOut" }, 50.8);
+}
+
+/* ============ P  good to know: glass notification expands (56.2-60.6) ====================== */
+{
+  const B = clip(56.2, 60.6);
+  const bg = el(B, "img", "abs", "left:-80px;top:-80px;width:2080px;height:1240px;object-fit:cover;filter:blur(44px) saturate(1.3) brightness(.95)"); bg.src = img("after");
+  el(B, "div", "full", "background:linear-gradient(200deg, rgba(40,90,120,.5), rgba(20,30,40,.1) 55%, rgba(220,80,60,.35))");
+  const cam = el(B, "div", "cam");
+  const panel = el(cam, "div", "glass", "left:560px;top:250px;width:800px;height:120px;overflow:hidden;transform-origin:50% 0;transform:scale(1.2)");
+  el(panel, "div", "abs", "left:36px;top:38px;font-size:30px;font-weight:500;white-space:nowrap", "Good to know");
+  el(panel, "div", "abs", "left:600px;top:34px;padding:8px 18px;border-radius:12px;background:rgba(255,255,255,.1);font-size:20px", "Show more");
+  const NOTES = [["Live view only", "Photos, recordings and downloads are not blurred"], ["Capture unchanged", "What the drone records stays the same"], ["A visual aid, not a guarantee", "Use it alongside your other privacy measures"], ["Safety first", "If the blur can't be applied reliably, you see the clear view"]];
+  NOTES.forEach(([a, b], i) => {
+    const n = el(panel, "div", "abs", `left:30px;top:${120 + i * 92}px;width:740px;height:76px;border-radius:14px;background:rgba(255,255,255,.06);display:flex;flex-direction:column;justify-content:center;padding:0 22px`,
+      `<b style="font-size:24px;font-weight:600">${a}</b><span style="font-size:18px;color:#BDBDC4;margin-top:4px">${b}</span>`);
+    tl.fromTo(n, { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: .35, ease: "power3.out" }, 57.75 + i * .38);
+  });
+  const m = mascot(cam, 60, 1500, 900);
+  tl.fromTo(m, { x: 1560, y: 980 }, { x: 1230, y: 356, duration: .9, ease: "power3.inOut" }, 56.4);
+  tap(m, 57.3); ping(cam, 1230, 356, 57.35);
+  tl.to(panel, { height: 520, duration: .55, ease: "expo.out" }, 57.4);
+  tl.to(m, { x: 1450, y: 760, duration: 1.4, ease: "sine.inOut" }, 57.8);
+  tl.fromTo(cam, { scale: 1.12, y: 40 }, { scale: 1, y: -40, duration: 4.4, ease: "sine.inOut" }, 56.2);
+}
+
+/* ============ Q  "Privacy [collage] built in" (60.6-63.4) ================================== */
+{
+  const S = clip(60.6, 63.4); const cam = el(S, "div", "cam");
+  split(cam, 540, 54, "Privacy", "built in", 60.62, 61.0, 250, .55);
+  const COL = [["p_valley", 300, 200, -70, -70, -6], ["after", 280, 170, 80, -10, 5], ["p_site2", 240, 160, -40, 110, 4], ["p_zones", 220, 150, 90, 120, -5]];
+  COL.forEach(([p, w, h, x, y, r], i) => {
+    const e = el(cam, "div", "ph abs", `left:${960 - w / 2}px;top:${540 - h / 2}px;width:${w}px;height:${h}px`); el(e, "img").src = img(p);
+    tl.fromTo(e, { x: x * .2, y: y * .2 + 80, scale: .4, rotation: 0, opacity: 0 }, { x, y, scale: 1, rotation: r, opacity: 1, duration: .32, ease: "power4.out" }, 61.25 + i * .14);
+  });
+  tl.fromTo(cam, { scale: 1 }, { scale: 1.08, duration: 2.8, ease: "none" }, 60.6);
+}
+
+/* ============ R  words on shape tokens (63.4-67.0): an overlapping row that rolls left ========= */
+{
+  const S = clip(63.4, 67.0);
+  const TOK = [["It only", "circ", C.L, C.B], ["shows", "oct", C.R, C.P], ["what's", "hex", C.Y, C.G], ["yours.", "circ", C.W, C.B]];
+  const g = el(S, "div", "abs", "left:960px;top:540px;width:0;height:0;transform:scale(1.55)");
+  const T = k => 63.5 + k * .8;                                       // token k takes centre stage at T(k)
+  TOK.forEach(([w, k, c, ring], i) => {
+    const tok = el(g, "div", "abs", "left:-110px;top:-110px;width:220px;height:220px");
+    el(tok, "div", "abs", "left:-24px;top:-24px", shapeSVG(k, 268, ring));
+    el(tok, "div", "abs", "left:0;top:0", shapeSVG(k === "oct" ? "circ" : k, 220, c));
+    el(tok, "div", "abs", `left:0;top:0;width:220px;height:220px;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:600;color:${c === C.R ? "#fff" : "#1D1D1F"};white-space:nowrap`, w);
+    gsap.set(tok, { x: 420, scale: .5, opacity: 0, zIndex: 1 });
+    const enter = Math.max(63.4, T(i) - .8);
+    tl.to(tok, { x: 200, scale: .66, opacity: 1, duration: .5, ease: "power3.out" }, enter);
+    tl.set(tok, { zIndex: 3 }, T(i));
+    tl.to(tok, { x: 0, scale: 1, duration: .55, ease: "power3.inOut" }, T(i));
+    if (i < TOK.length - 1) {
+      tl.set(tok, { zIndex: 2 }, T(i + 1) + .2);
+      tl.to(tok, { x: -200, scale: .66, duration: .55, ease: "power3.inOut" }, T(i + 1));
+      tl.to(tok, { x: -420, scale: .5, opacity: 0, duration: .5, ease: "power3.in" }, T(i + 2) < 67 ? T(i + 2) : 66.4);
+    }
+    const dir = i % 2 ? 1 : -1;                                       // every token keeps turning gently
+    tl.fromTo(tok, { rotation: -14 * dir }, { rotation: 14 * dir, duration: 3.6, ease: "sine.inOut" }, 63.4);
+  });
+}
+
+/* ============ S  lockup (67.0-70.0) ======================================================== */
+{
+  const S = clip(67.0, 70.0); const cam = el(S, "div", "cam");
+  const g = el(cam, "div", "abs", "left:960px;top:540px;width:0;height:0");
+  [["hex", 260, C.B], ["circ", 220, C.L], ["sq", 200, C.R]].forEach(([k, s, c], i) => {
+    const e = shape(g, k, s, c, 0, 0);
+    tl.fromTo(e, { scale: 1, rotation: i * 30, opacity: 1 }, { scale: .1, rotation: 200 + i * 40, opacity: .8, duration: .55, ease: "power3.in" }, 67.0 + i * .04);
+    tl.set(e, { opacity: 0 }, 67.62);
+  });
+  const lock = el(cam, "div", "abs", "left:0;width:1920px;top:493px;display:flex;justify-content:center;align-items:center;gap:22px");
+  const mk = el(lock, "div", "", "width:94px;height:94px", mascotSVG(94));
+  const tx = el(lock, "div", "", "font-size:66px;font-weight:600;letter-spacing:-0.03em;white-space:nowrap", "Site Privacy");
+  tl.fromTo(mk, { scale: 0, rotation: -140 }, { scale: 1, rotation: 0, duration: .65, ease: "power3.out" }, 67.5);
+  tl.fromTo(tx, { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: .5, ease: "power3.out" }, 67.75);
+  const by = el(cam, "div", "abs", "left:0;width:1920px;top:620px;text-align:center;font-size:24px;color:#8C8C90;font-weight:500", "in FlytBase Cockpit");
+  tl.fromTo(by, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: .45, ease: "power3.out" }, 68.2);
+  tl.fromTo(cam, { scale: 1 }, { scale: 1.04, duration: 3, ease: "none" }, 67.0);
+}
+
+tl.set({}, {}, 70);
+if (OFF || DUR !== 70) {                                             // slice render: play [OFF, OFF+DUR] of the film
+  const outer = gsap.timeline({ paused: true });
+  outer.add(tl.tweenFromTo(OFF, OFF + DUR, { ease: "none" }), 0);
+  window.__timelines["main"] = outer;
+} else window.__timelines["main"] = tl;
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# renders stay on your machine (the gallery previews are committed)
+out/*
+!out/previews/
+# analysed reference films are for study only and are not shared
+references/*
+!references/_examples/
+# licensed font: drop your own copy in (see README → Fonts)
+BriallenDisco-*
+# generated render slices
+templates/*/part_*.html
+# local environments / OS
+__pycache__/
+*.pyc
+node_modules/
+.DS_Store
+.env

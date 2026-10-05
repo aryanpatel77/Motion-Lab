@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en" data-composition-variables='[
+  {"id":"name","type":"string","label":"Name","default":"Making Drones Autonomous"},
+  {"id":"title","type":"string","label":"Title","default":"Head of Claude AI People and ChatGPT"},
+  {"id":"company","type":"string","label":"Company (optional)","default":""},
+  {"id":"bg","type":"enum","label":"Background","default":"green","options":[{"value":"green","label":"Green screen"},{"value":"dark","label":"Dark"},{"value":"none","label":"Transparent"}]},
+  {"id":"theme","type":"enum","label":"Colour","default":"blue","options":[{"value":"purple","label":"Purple (original)"},{"value":"blue","label":"Blue"}]},
+  {"id":"outro","type":"boolean","label":"Play outro","default":false}
+]'>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<link rel="stylesheet" href="lower-third.css" />
+<script src="lower-third.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: transparent; }
+  #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; }
+  #bg { position: absolute; inset: 0; }
+  #lt { position: absolute; left: 64px; top: 810px; width: 700px; height: 150px; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="10.01" data-width="1920" data-height="1080">
+  <div id="bg"></div>
+  <div id="lt" class="clip" data-start="0" data-duration="10.01" data-track-index="1"></div>
+</div>
+<script>
+  window.__timelines = window.__timelines || {};
+  const v = (window.__hyperframes && window.__hyperframes.getVariables && window.__hyperframes.getVariables()) || {};
+  const opts = { name: v.name || "Making Drones Autonomous", title: v.title || "Head of Claude AI People and ChatGPT", company: v.company != null ? v.company : "", theme: v.theme || "blue" };
+  const bg = v.bg || "green";
+  document.getElementById("bg").style.background = bg === "green" ? "#43ff06" : bg === "dark" ? "#0b0a1f" : "transparent";
+  document.getElementById("lt").innerHTML = NGLowerThird.html("lt0", opts);
+  const tl = gsap.timeline({ paused: true });
+  // source lights up at frame index 31 (1.034s); hold to the end like the original
+  NGLowerThird.animate(tl, "#lt0", { start: 31 / 29.97, end: v.outro ? 10.01 : null, outro: !!v.outro });
+  tl.set({}, {}, 10.01);
+  window.__timelines["main"] = tl;
+</script>
+</body>
+</html>

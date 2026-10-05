@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<title>Site Privacy</title>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Geist"; font-style: normal; font-weight: 300 700; src: url(assets/fonts/Geist-normal.woff2) format("woff2"); }
+@font-face { font-family: "Geist Mono"; font-style: normal; font-weight: 400 600; src: url(assets/fonts/GeistMono-normal.woff2) format("woff2"); }
+@font-face { font-family: "Lora"; font-style: italic; font-weight: 400 700; src: url(assets/fonts/Lora-italic.woff2) format("woff2"); }
+@font-face { font-family: "Lora"; font-style: normal; font-weight: 400 700; src: url(assets/fonts/Lora-normal.woff2) format("woff2"); }
+/* FlytBase tokens: charcoal base, one orange accent, sharp corners, dotted hairlines */
+:root { --dbg: #1A1A1A; --ds: #242424; --de: #2E2E2E; --db: #3D3D3D; --dm: #8A8A8A; --dsc: #999999; --dbd: #D6D6D6; --dh: #F0F0F0;
+  --o400: #D95B28; --o200: #EC7D42; --success: #3A7A65; --geo: #34C759; --ui: #3B6CF6; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--dbg); }
+#root { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--dbg); font-family: "Geist", sans-serif; color: var(--dh); }
+.full { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; }
+.abs { position: absolute; }
+#dots { position: absolute; inset: 0; background-image: radial-gradient(#2C2C2C 1.2px, transparent 1.3px); background-size: 32px 32px; }
+
+/* type */
+.head { position: absolute; left: 0; width: 1920px; text-align: center; font-family: "Lora", serif; font-weight: 400; color: var(--dh); letter-spacing: -.01em; line-height: 1.12; }
+.head i { font-style: italic; color: var(--o200); }
+.w { display: inline-block; white-space: pre; }
+.eyebrow { font-family: "Geist Mono", monospace; font-size: 18px; letter-spacing: .12em; text-transform: uppercase; color: var(--dsc); display: inline-flex; align-items: center; gap: 14px; }
+.eyebrow::before { content: ""; width: 12px; height: 12px; background: var(--o400); display: block; }
+.mono { font-family: "Geist Mono", monospace; letter-spacing: .08em; text-transform: uppercase; }
+
+/* cockpit panel (rebuilt) */
+.clip { z-index: 2; }
+.vlayer { position: absolute; overflow: hidden; z-index: 1; background: #000; }
+.vlayer video { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+.panel { position: absolute; overflow: hidden; background: transparent; outline: 1px solid var(--db); }
+.panel video, .panel img.feed { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+.pbar { position: absolute; left: 0; top: 0; right: 0; height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 22px;
+  background: linear-gradient(rgba(10,10,10,.92) 0%, rgba(10,10,10,.75) 55%, rgba(10,10,10,0) 100%); height: 64px; font-family: "Geist Mono", monospace; font-size: 15px; letter-spacing: .1em; color: var(--dbd); z-index: 3; }
+.pbar .live { display: inline-flex; align-items: center; gap: 10px; }
+.pbar .live::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: #F0F0F0; }
+.frame-dots { position: absolute; outline: 1px dotted #4a4a4a; outline-offset: 14px; }
+.tag { position: absolute; font-family: "Geist Mono", monospace; font-size: 16px; letter-spacing: .1em; text-transform: uppercase; color: var(--dh);
+  background: rgba(26,26,26,.86); border: 1px dotted #5a5a5a; padding: 8px 14px; white-space: nowrap; }
+.tag::before { content: ""; display: inline-block; width: 8px; height: 8px; background: var(--o400); margin-right: 10px; vertical-align: 1px; }
+.lead { position: absolute; height: 1px; background: #CFCFCF; transform-origin: 0 50%; }
+.pin { position: absolute; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; background: var(--o400); }
+
+/* cockpit video-overlays menu (product UI, kept close to the real thing) */
+.menu { position: absolute; width: 470px; background: #1E1F23; border: 1px solid #34353A; border-radius: 12px; padding: 10px 0; font-family: "Geist", sans-serif; }
+.row { height: 58px; display: flex; align-items: center; padding: 0 26px; gap: 14px; font-size: 22px; color: #E8E8EA; position: relative; }
+.row .lbl { flex: 1; white-space: nowrap; }
+.beta { font-family: "Geist Mono", monospace; font-size: 13px; letter-spacing: .1em; color: #7FA2FF; border: 1px solid #4A66B8; border-radius: 4px; padding: 3px 7px; }
+.tg { width: 50px; height: 28px; border-radius: 14px; background: #4A4B52; position: relative; flex: none; }
+.tg.on { background: var(--ui); }
+.tg i { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; }
+.tg.on i { left: 25px; }
+.ibar { position: absolute; display: flex; gap: 14px; }
+.ibtn { width: 62px; height: 62px; border-radius: 10px; background: #26272C; border: 1px solid #34353A; display: flex; align-items: center; justify-content: center; }
+.ibtn.act { background: var(--ui); border-color: var(--ui); }
+.cursor { position: absolute; left: 0; top: 0; width: 34px; height: 34px; z-index: 20; }
+.ring { position: absolute; left: 0; top: 0; width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 50%; border: 3px solid var(--o200); opacity: 0; z-index: 19; }
+
+/* cards (anchor / hairline grid / row list) */
+.rowlist { position: absolute; left: 360px; width: 1200px; }
+.rl { display: flex; align-items: center; gap: 30px; padding: 30px 8px; border-top: 1px dotted #4a4a4a; }
+.rl:last-child { border-bottom: 1px dotted #4a4a4a; }
+.rl svg { flex: none; }
+.rl b { font-family: "Lora", serif; font-weight: 400; font-size: 40px; color: var(--dh); }
+.rl span { display: block; font-size: 22px; color: var(--dsc); margin-top: 6px; }
+.grid4 { position: absolute; left: 240px; top: 330px; width: 1440px; display: grid; grid-template-columns: 1fr 1fr; border-top: 1px dotted #4a4a4a; border-left: 1px dotted #4a4a4a; }
+.cell { border-right: 1px dotted #4a4a4a; border-bottom: 1px dotted #4a4a4a; padding: 40px 44px; display: flex; gap: 26px; min-height: 196px; }
+.cell b { display: block; font-family: "Lora", serif; font-weight: 400; font-size: 36px; color: var(--dh); }
+.cell span { display: block; font-size: 22px; color: var(--dsc); margin-top: 10px; line-height: 1.4; }
+.chk { flex: none; width: 44px; height: 44px; border: 1px solid rgba(58,122,101,.6); background: rgba(58,122,101,.18); display: flex; align-items: center; justify-content: center; }
+.steps { position: absolute; left: 160px; top: 520px; width: 1600px; display: grid; grid-template-columns: repeat(4, 1fr); }
+.step { padding: 44px 30px 0 0; position: relative; }
+.step .n { font-family: "Geist Mono", monospace; font-size: 16px; letter-spacing: .12em; color: var(--dm); }
+.step b { display: block; font-family: "Lora", serif; font-weight: 400; font-size: 34px; color: var(--dh); margin-top: 14px; line-height: 1.2; }
+.step span { display: block; font-size: 20px; color: var(--dsc); margin-top: 10px; }
+.step .dot { position: absolute; left: 0; top: -9px; width: 18px; height: 18px; border-radius: 50%; background: var(--dbg); border: 2px solid var(--db); }
+.rail { position: absolute; left: 160px; top: 520px; height: 2px; background: var(--db); width: 1440px; }
+.rail i { position: absolute; left: 0; top: 0; height: 2px; width: 100%; background: var(--o400); transform-origin: 0 50%; }
+.note { position: absolute; left: 300px; width: 1320px; display: flex; gap: 30px; padding: 34px 40px; background: var(--ds); border: 1px dotted #4a4a4a; }
+.note b { display: block; font-family: "Lora", serif; font-weight: 400; font-size: 38px; color: var(--dh); }
+.note span { display: block; font-size: 23px; color: var(--dbd); margin-top: 10px; line-height: 1.45; }
+.wipe-line { position: absolute; top: 0; width: 3px; height: 100%; background: #fff; box-shadow: 0 0 18px rgba(255,255,255,.6); z-index: 4; }
+.chips { position: absolute; display: flex; gap: 18px; }
+.chip { font-family: "Geist Mono", monospace; font-size: 18px; letter-spacing: .1em; text-transform: uppercase; padding: 12px 20px; border: 1px dotted #5a5a5a; color: var(--dm); background: var(--dbg); }
+.chip.on { color: var(--dh); border: 1px solid var(--o400); }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="86" data-width="1920" data-height="1080">
+  <!-- footage layers: authored statically so the renderer can pre-extract their frames; the script only positions them -->
+  <div id="vl-reach" class="vlayer" style="opacity:0"><video id="v-reach" src="assets/clips/reach.mp4" data-start="9" data-duration="9" data-media-start="1.4" data-track-index="30" muted playsinline></video></div>
+  <div id="vl-zones_on" class="vlayer" style="opacity:0"><video id="v-zones_on" src="assets/clips/zones_on.mp4" data-start="20.45" data-duration="4.15" data-media-start="0.1" data-track-index="31" muted playsinline></video></div>
+  <div id="vl-cockpit_split" class="vlayer" style="opacity:0"><video id="v-cockpit_split" src="assets/clips/cockpit_split.mp4" data-start="24.6" data-duration="1.9" data-media-start="0.4" data-track-index="32" muted playsinline></video></div>
+  <div id="vl-beyond" class="vlayer" style="opacity:0"><video id="v-beyond" src="assets/clips/beyond.mp4" data-start="26.5" data-duration="6.0" data-media-start="4.6" data-track-index="33" muted playsinline></video></div>
+  <div id="vl-tracking" class="vlayer" style="opacity:0"><video id="v-tracking" src="assets/clips/tracking.mp4" data-start="45.5" data-duration="5.0" data-media-start="0.4" data-track-index="34" muted playsinline></video></div>
+  <div id="vl-outside" class="vlayer" style="opacity:0"><video id="v-outside" src="assets/clips/outside.mp4" data-start="50.5" data-duration="3.5" data-media-start="0.8" data-track-index="35" muted playsinline></video></div>
+  <div id="vl-swingback" class="vlayer" style="opacity:0"><video id="v-swingback" src="assets/clips/swingback.mp4" data-start="54.0" data-duration="2.5" data-media-start="0.35" data-track-index="36" muted playsinline></video></div>
+</div>
+<script>
+/* ============================================================================================
+   Site Privacy (Blur outside Geofence) — FlytBase motion product video, 86 s, 1920x1080.
+   Footage: FlytBase "Introducing Site Privacy" (YouTube), cropped clean. Copy follows the
+   customer guide at releases.flytbase.com/september-2026/blur-outside-geofence-customer-guide.
+   ============================================================================================ */
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({ paused: true });
+const root = document.getElementById("root");
+let track = 1, uid = 0, vtrack = 30;
+function clip(t0, t1, html = "", cls = "", style = "") {
+  const d = document.createElement("div");
+  d.className = "clip full " + cls; d.id = "s" + (uid++);
+  const s0 = Math.max(0, t0 - 0.001), e0 = t1 - 0.001;
+  d.dataset.start = s0.toFixed(4); d.dataset.duration = Math.max(0.034, e0 - s0).toFixed(4); d.dataset.trackIndex = String(track++);
+  if (style) d.setAttribute("style", style);
+  d.innerHTML = html; root.appendChild(d); return d;
+}
+function el(parent, tag, cls, style, html) {
+  const e = document.createElement(tag); if (cls) e.className = cls; if (style) e.setAttribute("style", style);
+  if (html != null) e.innerHTML = html; parent.appendChild(e); return e;
+}
+function vlayer(src, t0, t1, mediaStart, x = PX, y = PY, w = PW, h = PH) {   // timing lives on the static <video> tag
+  const wrap = document.getElementById("vl-" + src);
+  Object.assign(wrap.style, { left: x + "px", top: y + "px", width: w + "px", height: h + "px" });
+  tl.set(wrap, { opacity: 1 }, t0); tl.set(wrap, { opacity: 0 }, t1);
+  return wrap;
+}
+function video(parent, src, t0, t1, mediaStart = 0, style = "") {
+  const v = el(parent, "video", "", style);
+  v.src = `assets/clips/${src}.mp4`; v.muted = true; v.setAttribute("muted", ""); v.setAttribute("playsinline", "");
+  v.id = "v" + (uid++); v.dataset.start = t0.toFixed(4); v.dataset.duration = (t1 - t0).toFixed(4);
+  v.dataset.mediaStart = mediaStart.toFixed(3); v.dataset.trackIndex = String(vtrack++);
+  return v;
+}
+/* headline with per-word reveal. *word* = italic accent (one word only, per brand) */
+function head(parent, text, y, size, t, opt = {}) {
+  const h = el(parent, "div", "head", `top:${y}px;font-size:${size}px;${opt.style || ""}`);
+  h.innerHTML = text.split(" ").map(w => w.startsWith("*") ? `<span class="w"><i>${w.replace(/\*/g, "")}</i></span>` : `<span class="w">${w}</span>`).join(`<span class="w"> </span>`);
+  const ws = h.querySelectorAll(".w");
+  tl.fromTo(ws, { y: size * 0.45, opacity: 0, filter: "blur(10px)" }, { y: 0, opacity: 1, filter: "blur(0px)", duration: 0.55, ease: "power3.out", stagger: opt.stagger ?? 0.05 }, t);
+  if (opt.out != null) tl.to(ws, { y: -size * 0.3, opacity: 0, filter: "blur(8px)", duration: 0.35, ease: "power2.in", stagger: 0.02 }, opt.out);
+  return h;
+}
+function fadeUp(target, t, d = 0.5, dy = 26) { tl.fromTo(target, { y: dy, opacity: 0 }, { y: 0, opacity: 1, duration: d, ease: "power3.out" }, t); }
+const CUR = `<svg viewBox="0 0 34 34"><path d="M5 3 L5 27 L11.5 21 L16 31 L20 29 L15.5 19.5 L24 19.5 Z" fill="#fff" stroke="#111" stroke-width="1.8" stroke-linejoin="round"/></svg>`;
+function cursor(parent) { const c = el(parent, "div", "cursor", "", CUR); const r = el(parent, "div", "ring"); return { c, r }; }
+function click(cu, x, y, t) {
+  tl.to(cu.c, { scale: 0.82, duration: 0.08, ease: "power2.in", transformOrigin: "5px 3px" }, t);
+  tl.to(cu.c, { scale: 1, duration: 0.18, ease: "power2.out" }, t + 0.08);
+  tl.fromTo(cu.r, { x: x, y: y, scale: 0.3, opacity: 1 }, { scale: 1.3, opacity: 0, duration: 0.5, ease: "power2.out" }, t + 0.04);
+}
+const ICON = {   // Phosphor-style thin line icons
+  check: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7FC4AC" stroke-width="1.6"><path d="M4 12.5l5 5L20 6.5"/></svg>`,
+  layers: `<svg width="56" height="56" viewBox="0 0 56 56" fill="none" stroke="#EC7D42" stroke-width="1.4"><path d="M28 8 L50 20 L28 32 L6 20 Z"/><path d="M6 28 L28 40 L50 28"/><path d="M6 36 L28 48 L50 36"/></svg>`,
+  memory: `<svg width="56" height="56" viewBox="0 0 56 56" fill="none" stroke="#EC7D42" stroke-width="1.4"><circle cx="28" cy="28" r="20"/><path d="M28 16 V28 L36 34"/></svg>`,
+  eye: `<svg width="56" height="56" viewBox="0 0 56 56" fill="none" stroke="#EC7D42" stroke-width="1.4"><path d="M4 28 C12 14 44 14 52 28 C44 42 12 42 4 28 Z"/><circle cx="28" cy="28" r="8"/></svg>`,
+  film: `<svg width="56" height="56" viewBox="0 0 56 56" fill="none" stroke="#EC7D42" stroke-width="1.4"><rect x="6" y="12" width="44" height="32"/><path d="M6 20h44M6 36h44M16 12v8M28 12v8M40 12v8M16 36v8M28 36v8M40 36v8"/></svg>`,
+  shield: `<svg width="56" height="56" viewBox="0 0 56 56" fill="none" stroke="#EC7D42" stroke-width="1.4"><path d="M28 6 L46 13 V27 C46 39 38 47 28 50 C18 47 10 39 10 27 V13 Z"/><path d="M28 20 V31 M28 37 v1"/></svg>`,
+  map: `<svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#DADADF" stroke-width="1.5"><path d="M3 7 L11 4 L19 7 L27 4 V23 L19 26 L11 23 L3 26 Z M11 4 V23 M19 7 V26"/></svg>`,
+  gauge: `<svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#DADADF" stroke-width="1.5"><circle cx="15" cy="15" r="11"/><path d="M15 15 L21 9"/></svg>`,
+  stack: `<svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#fff" stroke-width="1.6"><path d="M15 4 L27 10 L15 16 L3 10 Z M3 15 L15 21 L27 15 M3 20 L15 26 L27 20"/></svg>`,
+};
+const MENU_ROWS = [["Blur outside Geofence", true], ["Zone overlays"], ["AI detections"], ["Zone proximity warnings"], ["Live annotations"], ["Instruments"]];
+function menu(parent, x, y, onSet = {}) {
+  const m = el(parent, "div", "menu", `left:${x}px;top:${y}px`);
+  const tg = {};
+  MENU_ROWS.forEach(([lbl, beta], i) => {
+    const r = el(m, "div", "row", "", `<span class="lbl">${lbl}</span>${beta ? '<span class="beta">BETA</span>' : ""}`);
+    const t = el(r, "div", "tg" + (onSet[i] ? " on" : ""), "", "<i></i>"); tg[i] = t; r.dataset.i = i;
+  });
+  return { m, tg };
+}
+function toggleOn(t, at) {
+  tl.to(t.querySelector("i"), { x: 22, duration: 0.22, ease: "power2.inOut" }, at);
+  tl.to(t, { backgroundColor: "#3B6CF6", duration: 0.22, ease: "power2.inOut" }, at);
+}
+function panel(parent, x, y, w, h, bar) {
+  el(parent, "div", "frame-dots", `left:${x}px;top:${y}px;width:${w}px;height:${h}px`);
+  const p = el(parent, "div", "panel", `left:${x}px;top:${y}px;width:${w}px;height:${h}px`);
+  if (bar) el(p, "div", "pbar", "", `<span class="live">LIVE &nbsp;·&nbsp; DOCK DRONE &nbsp;/&nbsp; PAYLOAD CAMERA</span><span class="zr">${bar}</span>`);
+  return p;
+}
+el(root, "div", "", "position:absolute;inset:0", '<div id="dots"></div>');
+const PX = 300, PY = 214, PW = 1320, PH = 742;              // cockpit panel geometry
+
+/* ===== S1  hook (0-5.2) ===================================================================== */
+{
+  const S = clip(0, 5.2);
+  const line = el(S, "div", "head", "top:420px;font-size:92px");
+  line.innerHTML = `<span class="w">Your drone sees</span><span class="w"> </span><span class="w" id="win" style="width:300px;height:118px;vertical-align:-18px;position:relative;overflow:hidden;outline:1px solid #3D3D3D"></span><span class="w"> </span><span class="w">hundreds</span><br><span class="w">of metres out.</span>`;
+  el(document.getElementById("win"), "img", "", "position:absolute;inset:0;width:100%;height:100%;object-fit:cover").src = "assets/img/hook_window.jpg";
+  const ws = line.querySelectorAll(".w");
+  tl.fromTo(ws, { y: 40, opacity: 0, filter: "blur(10px)" }, { y: 0, opacity: 1, filter: "blur(0px)", duration: 0.6, ease: "power3.out", stagger: 0.08 }, 0.25);
+  tl.fromTo("#win", { width: 0 }, { width: 300, duration: 0.7, ease: "expo.out" }, 0.45);
+  tl.to(line, { y: -60, opacity: 0, filter: "blur(10px)", duration: 0.4, ease: "power2.in" }, 2.55);
+  head(S, "Including what isn't *yours.*", 470, 104, 2.95, { stagger: 0.07 });
+}
+
+/* ===== S2  title (5.2-9.0): real after-blur frame behind the name ============================ */
+{
+  const S = clip(5.2, 9.0);
+  const bg = el(S, "img", "feed", "position:absolute;left:0;top:0;width:1920px;height:1080px;object-fit:cover"); bg.src = "assets/img/after.jpg";
+  el(S, "div", "", "position:absolute;inset:0;background:radial-gradient(70% 70% at 50% 45%, rgba(26,26,26,.55), rgba(26,26,26,.92))");
+  tl.fromTo(bg, { scale: 1.12, opacity: 0 }, { scale: 1.0, opacity: 1, duration: 3.8, ease: "power2.out" }, 5.2);
+  const eb = el(S, "div", "abs", "left:0;width:1920px;top:368px;text-align:center", `<span class="eyebrow">New in FlytBase Cockpit &nbsp;·&nbsp; September 2026</span>`);
+  fadeUp(eb, 5.45, 0.6, 16);
+  head(S, "Site *Privacy*", 408, 168, 5.6, { stagger: 0.12 });
+  const sub = el(S, "div", "abs mono", "left:0;width:1920px;top:640px;text-align:center;font-size:24px;color:#D6D6D6", "Blur outside Geofence");
+  fadeUp(sub, 6.3, 0.6, 14);
+  tl.to(S.children, { opacity: 0, duration: 0.35, ease: "power2.in" }, 8.65);
+}
+
+/* ===== S3  the reach (9-18) ================================================================== */
+{
+  const S = clip(9, 18);
+  head(S, "Zoom in, and the view runs well past your site.", 82, 54, 9.25);
+  const p = panel(S, PX, PY, PW, PH, "WIDE · 1×");
+  const v3 = vlayer("reach", 9, 18, 1.4);
+  tl.fromTo([p, v3], { scale: 0.94 }, { scale: 1, duration: 0.8, ease: "expo.out" }, 9.0);
+  tl.fromTo(p, { opacity: 0 }, { opacity: 1, duration: 0.5 }, 9.0);
+  const zr = p.querySelector(".zr");
+  tl.set(zr, { innerHTML: "ZOOM · 14×" }, 9 + (4.0 - 1.4));
+  tl.fromTo(zr, { color: "#EC7D42" }, { color: "#D6D6D6", duration: 0.8 }, 9 + (4.0 - 1.4));
+  // callouts on the zoomed shot (kiln, vehicles, farmland)
+  const k = 1320 / 1280, C = [[512, 300, "Neighbouring property", -60, -90], [1050, 364, "Vehicles on the road", -290, -96], [300, 600, "Farmland next door", 60, 40]];
+  C.forEach(([x, y, txt, dx, dy], i) => {
+    const t0 = 14.0 + i * 0.45, X = PX + x * k, Y = PY + y * k;
+    const pin = el(S, "div", "pin", `left:${X - 7}px;top:${Y - 7}px`);
+    const tag = el(S, "div", "tag", `left:${X + dx}px;top:${Y + dy}px`, txt);
+    tl.fromTo(pin, { scale: 0 }, { scale: 1, duration: 0.3, ease: "back.out(2)" }, t0);
+    tl.fromTo(tag, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, t0 + 0.1);
+  });
+  tl.to([...S.children, v3], { opacity: 0, duration: 0.3 }, 17.7);
+}
+
+/* ===== S4  see your boundary (18-26.5) ======================================================= */
+{
+  const S = clip(18, 26.5);
+  const h1 = head(S, "First, see where your site *ends.*", 82, 54, 18.2, { out: 21.5 });
+  const p = panel(S, PX, PY, PW, PH, "WIDE · 1×");
+  const still = el(p, "img", "feed"); still.src = "assets/img/zones_off.jpg";      // first frame of the clip, zones not yet drawn
+  const v4 = vlayer("zones_on", 20.45, 24.6, 0.1);                                          // zones pop 0.3 s into the clip = on the click
+  tl.set(still, { opacity: 0 }, 20.45);
+  el(p, "div", "", "position:absolute;inset:0;background:rgba(0,0,0,.35)").id = "dim4";
+  tl.set("#dim4", { opacity: 0 }, 21.1);
+  const bar = el(S, "div", "ibar", `left:${PX + PW - 240}px;top:${PY + PH - 92}px`, `<div class="ibtn">${ICON.map}</div><div class="ibtn">${ICON.gauge}</div><div class="ibtn" id="ovl">${ICON.stack}</div>`);
+  const { m, tg } = menu(S, PX + PW - 506, PY + PH - 92 - 384, { 2: 1, 3: 1, 4: 1, 5: 1 });
+  gsap.set(m, { transformOrigin: "100% 100%" });
+  tl.fromTo(m, { opacity: 0, scale: 0.92, y: 16 }, { opacity: 1, scale: 1, y: 0, duration: 0.35, ease: "power3.out" }, 19.55);
+  tl.set("#ovl", { className: "ibtn act" }, 19.5);
+  const cu = cursor(S);
+  const OX = PX + PW - 240 + 2 * 76 + 31, OY = PY + PH - 92 + 31;
+  tl.fromTo(cu.c, { x: 1100, y: 640 }, { x: OX - 4, y: OY - 4, duration: 0.9, ease: "power3.inOut" }, 18.4);
+  click(cu, OX, OY, 19.4);
+  const TY = PY + PH - 92 - 384 + 10 + 58 + 29, TX = PX + PW - 506 + 470 - 26 - 25;
+  tl.to(cu.c, { x: TX - 4, y: TY - 4, duration: 0.7, ease: "power3.inOut" }, 19.8);
+  click(cu, TX, TY, 20.6);
+  toggleOn(tg[1], 20.65);
+  tl.to([m, bar, cu.c], { opacity: 0, duration: 0.3, ease: "power2.in" }, 21.05);
+  tl.set("#ovl", { className: "ibtn" }, 21.3);
+  head(S, "Your geofence, drawn on the live video.", 82, 54, 22.0, { out: 24.35 });
+  // same boundary, on the map and on the live video
+  const sp = vlayer("cockpit_split", 24.6, 26.5, 0.4);
+  tl.fromTo(sp, { scale: 1.04 }, { scale: 1, duration: 0.45, ease: "power3.out" }, 24.6);
+  head(S, "Same boundary, on the map and on the camera.", 82, 54, 24.7);
+  tl.to([...S.children, sp], { opacity: 0, duration: 0.3 }, 26.2);
+}
+
+/* ===== S5  the gap (26.5-32.5) =============================================================== */
+{
+  const S = clip(26.5, 32.5);
+  const p = panel(S, PX, PY, PW, PH, "ZOOM · 14×");
+  const v5 = vlayer("beyond", 26.5, 32.5, 4.6);
+  head(S, "The drone stays inside the line.", 82, 54, 26.7, { out: 29.25 });
+  head(S, "The camera *doesn't.*", 82, 54, 29.6);
+  const tag = el(S, "div", "tag", `left:${PX + 760}px;top:${PY + 120}px`, "Geofence boundary");
+  tl.fromTo(tag, { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.4, ease: "power3.out" }, 27.6);
+  tl.to(tag, { opacity: 0, duration: 0.3 }, 29.3);
+  tl.to([...S.children, v5], { opacity: 0, duration: 0.3 }, 32.2);
+}
+
+/* ===== S6  one switch (32.5-37.5) ============================================================ */
+{
+  const S = clip(32.5, 37.5);
+  head(S, "So, one switch.", 250, 76, 32.65);
+  const box = el(S, "div", "abs", "left:0;top:0;width:1920px;height:1080px");
+  const row = el(box, "div", "menu", "left:610px;top:470px;width:700px;padding:0", `<div class="row" style="height:116px;font-size:38px;padding:0 44px;gap:22px"><span class="lbl">Blur outside Geofence</span><span class="beta" style="font-size:18px;padding:5px 10px">BETA</span><div class="tg" style="width:96px;height:54px;border-radius:27px"><i style="width:44px;height:44px;top:5px;left:5px"></i></div></div>`);
+  tl.fromTo(row, { opacity: 0, scale: 1.2, y: 30 }, { opacity: 1, scale: 1.4, y: 0, duration: 0.6, ease: "expo.out" }, 32.9);
+  const t = row.querySelector(".tg"), knob = t.querySelector("i");
+  const cu = cursor(S);
+  tl.fromTo(cu.c, { x: 1560, y: 860 }, { x: 1316, y: 524, duration: 0.8, ease: "power3.inOut" }, 33.4);
+  click(cu, 1320, 528, 34.25);
+  tl.to(knob, { x: 42, duration: 0.25, ease: "power2.inOut" }, 34.3);
+  tl.to(t, { backgroundColor: "#3B6CF6", duration: 0.25 }, 34.3);
+  const cap = el(S, "div", "abs mono", "left:0;width:1920px;top:680px;text-align:center;font-size:20px;color:#999", "Video overlays &nbsp;›&nbsp; Blur outside Geofence");
+  fadeUp(cap, 34.7, 0.5, 10);
+  tl.to(S.children, { opacity: 0, scale: 0.96, duration: 0.35, ease: "power2.in" }, 37.1);
+}
+
+/* ===== S7  the reveal (37.5-45.5): before/after wipe on the same frame ======================= */
+{
+  const S = clip(37.5, 45.5);
+  const p = panel(S, PX, PY, PW, PH, "BLUR OUTSIDE GEOFENCE · ON");
+  const b = el(p, "img", "feed"); b.src = "assets/img/before.jpg";
+  const a = el(p, "img", "feed", "clip-path:inset(0 100% 0 0)"); a.src = "assets/img/after.jpg";
+  const ln = el(p, "div", "wipe-line", "left:0");
+  const lb = el(p, "div", "tag", "left:24px;top:70px;z-index:5", "Before"), la = el(p, "div", "tag", "right:24px;top:70px;z-index:5", "After");
+  tl.fromTo(p, { opacity: 0 }, { opacity: 1, duration: 0.35 }, 37.5);
+  tl.fromTo(a, { clipPath: "inset(0 100% 0 0%)" }, { clipPath: "inset(0 0% 0 0%)", duration: 1.6, ease: "power2.inOut" }, 38.4);
+  tl.fromTo(ln, { x: 0 }, { x: PW - 3, duration: 1.6, ease: "power2.inOut" }, 38.4);
+  tl.to(a, { clipPath: "inset(0 0% 0 50%)", duration: 1.0, ease: "power3.inOut" }, 41.6);
+  tl.to(ln, { x: PW / 2, duration: 1.0, ease: "power3.inOut" }, 41.6);
+  tl.fromTo([lb, la], { opacity: 0 }, { opacity: 1, duration: 0.3 }, 38.2);
+  head(S, "Outside the geofence goes *soft.*", 82, 54, 38.6, { out: 41.3 });
+  head(S, "Inside, your site stays sharp.", 82, 54, 41.7);
+  tl.fromTo(p.querySelector("img:nth-of-type(1)"), { scale: 1 }, { scale: 1.04, duration: 8, ease: "none" }, 37.5);
+  tl.fromTo(a, { scale: 1 }, { scale: 1.04, duration: 8, ease: "none" }, 37.5);
+  tl.to(S.children, { opacity: 0, duration: 0.3 }, 45.2);
+}
+
+/* ===== S8  it moves with the camera (45.5-56.5) ============================================== */
+{
+  const S = clip(45.5, 56.5);
+  const p = panel(S, PX, PY, PW, PH, "BLUR OUTSIDE GEOFENCE · ON");
+  vlayer("tracking", 45.5, 50.5, 0.4);
+  vlayer("outside", 50.5, 54.0, 0.8);
+  const v8 = vlayer("swingback", 54.0, 56.5, 0.35);
+  head(S, "Not a fixed mask. It moves with the *camera.*", 82, 54, 45.7, { out: 50.2 });
+  const chips = el(S, "div", "chips", `left:${PX}px;top:${PY + PH + 34}px`, `<div class="chip">Drone moves</div><div class="chip">Gimbal turns</div><div class="chip">Camera zooms</div>`);
+  const cs = chips.querySelectorAll(".chip");
+  fadeUp(chips, 46.1, 0.5, 12);
+  cs.forEach((c, i) => { tl.set(c, { className: "chip on" }, 46.6 + i * 1.1); });
+  tl.to(chips, { opacity: 0, duration: 0.3 }, 50.2);
+  head(S, "Point fully outside, and the whole feed stays private.", 82, 52, 50.6, { out: 53.7 });
+  head(S, "Swing back, and your site snaps into *focus.*", 82, 54, 54.1);
+  tl.to([...S.children, v8], { opacity: 0, duration: 0.3 }, 56.2);
+}
+
+/* ===== S9  still in control (56.5-62) ======================================================= */
+{
+  const S = clip(56.5, 62);
+  const eb = el(S, "div", "abs", "left:360px;top:190px", `<span class="eyebrow">Still in control</span>`); fadeUp(eb, 56.6, 0.5, 12);
+  const rl = el(S, "div", "rowlist", "top:270px", [
+    [ICON.layers, "Zone labels stay on top", "Boundaries and labels remain visible above the blurred video."],
+    [ICON.memory, "Remembered", "Cockpit keeps your choice the next time you open it."],
+    [ICON.eye, "Off in one click", "Need a clear look outside, to check a hazard? Turn it off, then back on."],
+  ].map(([ic, b, s]) => `<div class="rl">${ic}<div><b>${b}</b><span>${s}</span></div></div>`).join(""));
+  rl.querySelectorAll(".rl").forEach((r, i) => fadeUp(r, 56.9 + i * 0.35, 0.55, 30));
+  tl.to(S.children, { opacity: 0, duration: 0.3 }, 61.7);
+}
+
+/* ===== S10 how to turn it on (62-68.5) ====================================================== */
+{
+  const S = clip(62, 68.5);
+  const eb = el(S, "div", "abs", "left:160px;top:250px", `<span class="eyebrow">How to turn it on</span>`); fadeUp(eb, 62.1, 0.5, 12);
+  head(S, "Four steps, about five *seconds.*", 300, 64, 62.3, { style: "text-align:left;left:160px;width:1600px" });
+  const rail = el(S, "div", "rail", "", "<i></i>");
+  const st = el(S, "div", "steps", "", [
+    ["Open Cockpit", "Select the drone you want to fly."], ["Launch the flight", "The option appears once it's airborne."],
+    ["Video overlays", "On the live payload camera view."], ["Blur outside Geofence", "Toggle it on. Check the live view."],
+  ].map(([b, s], i) => `<div class="step"><div class="dot"></div><div class="n">STEP ${i + 1}</div><b>${b}</b><span>${s}</span></div>`).join(""));
+  tl.fromTo(rail.querySelector("i"), { scaleX: 0 }, { scaleX: 1, duration: 4.4, ease: "none" }, 63.0);
+  st.querySelectorAll(".step").forEach((s, i) => {
+    fadeUp(s, 63.0 + i * 1.1, 0.5, 20);
+    tl.to(s.querySelector(".dot"), { backgroundColor: "#D95B28", borderColor: "#D95B28", duration: 0.2 }, 63.0 + i * 1.1);
+  });
+  tl.to(S.children, { opacity: 0, duration: 0.3 }, 68.2);
+}
+
+/* ===== S11 before you start (68.5-75) ======================================================= */
+{
+  const S = clip(68.5, 75);
+  const eb = el(S, "div", "abs", "left:240px;top:170px", `<span class="eyebrow">Before you start</span>`); fadeUp(eb, 68.6, 0.5, 12);
+  head(S, "What you need.", 214, 64, 68.75, { style: "text-align:left;left:240px;width:1440px" });
+  const g = el(S, "div", "grid4", "", [
+    ["A geofence synced to the drone", "No-fly zones on their own are not enough."],
+    ["Fast link telemetry", "A supported drone, with Fast link selected."],
+    ["Chrome or Edge, with WebGPU", "Up to date, with hardware acceleration on."],
+    ["The drone in flight", "The option appears only while it is airborne."],
+  ].map(([b, s]) => `<div class="cell"><div class="chk">${ICON.check}</div><div><b>${b}</b><span>${s}</span></div></div>`).join(""));
+  g.querySelectorAll(".cell").forEach((c, i) => {
+    fadeUp(c, 69.2 + i * 0.4, 0.5, 20);
+    tl.fromTo(c.querySelector(".chk svg"), { scale: 0 }, { scale: 1, duration: 0.3, ease: "back.out(2.5)" }, 69.6 + i * 0.4);
+  });
+  tl.to(S.children, { opacity: 0, duration: 0.3 }, 74.7);
+}
+
+/* ===== S12 good to know (75-80.5) =========================================================== */
+{
+  const S = clip(75, 80.5);
+  const eb = el(S, "div", "abs", "left:300px;top:250px", `<span class="eyebrow">Good to know</span>`); fadeUp(eb, 75.1, 0.5, 12);
+  const n1 = el(S, "div", "note", "top:320px", `${ICON.film}<div><b>Live view only.</b><span>Photos, recordings and downloaded media are not blurred. What the drone captures does not change.</span></div>`);
+  const n2 = el(S, "div", "note", "top:540px", `${ICON.shield}<div><b>A visual aid, not a guarantee.</b><span>If Cockpit can't apply the blur reliably, it shows the clear view, so you never lose sight of the drone's surroundings. Flight safety first.</span></div>`);
+  fadeUp(n1, 75.35, 0.55, 26); fadeUp(n2, 75.9, 0.55, 26);
+  tl.to(S.children, { opacity: 0, duration: 0.3 }, 80.2);
+}
+
+/* ===== S13 close (80.5-86) ================================================================== */
+{
+  const S = clip(80.5, 86);
+  head(S, "It only shows what's *yours.*", 420, 104, 80.7, { stagger: 0.07, out: 83.2 });
+  const logo = el(S, "img", "abs", "left:660px;top:470px;width:600px"); logo.src = "assets/logo/flytbase-white.png";
+  tl.fromTo(logo, { opacity: 0, y: 20, filter: "blur(8px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.7, ease: "power3.out" }, 83.55);
+  const url = el(S, "div", "abs mono", "left:0;width:1920px;top:640px;text-align:center;font-size:20px;color:#999", "Site Privacy &nbsp;·&nbsp; releases.flytbase.com");
+  fadeUp(url, 84.0, 0.5, 10);
+}
+
+tl.set({}, {}, 86);
+window.__timelines["main"] = tl;
+</script>
+</body>
+</html>

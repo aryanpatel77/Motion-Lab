@@ -1,0 +1,457 @@
+{
+  "$comment": "Motion Lab template registry. One entry per template folder. `params` are what a user may change; `slots` are media they can drop in.",
+  "templates": [
+    {
+      "id": "site-privacy-v2",
+      "title": "Site Privacy: light motion-graphics product film (70s)",
+      "kind": "sequence",
+      "tags": [
+        "product-film",
+        "collage-opener",
+        "photos-between-words",
+        "word-split-carousel",
+        "shape-morph",
+        "icon-cursor",
+        "rolodex-text",
+        "toggle-zoom-through",
+        "thinking-steps",
+        "word-tokens",
+        "motion-blur"
+      ],
+      "size": [
+        1920,
+        1080
+      ],
+      "fps": 30,
+      "duration": 70.0,
+      "source": {
+        "type": "file",
+        "ref": "~/Downloads/SnapInsta.to_AQOWDJ1mt1…mp4",
+        "note": "Shapes HR launch film used as the motion reference; FlytBase Blur outside Geofence content. Latest render: out/site-privacy-v4.mp4; breakdown: out/site-privacy-breakdown.mp4"
+      },
+      "status": "verified",
+      "engine": "hyperframes",
+      "params": {},
+      "render": "python3 make_parts.py, render part_0..2 at 180 fps, blend 6 sub-frames (see templates/site-privacy-v2/README.md)",
+      "renders": [
+        "site-privacy-v2.mp4",
+        "site-privacy-v3.mp4",
+        "site-privacy-v4.mp4",
+        "site-privacy-breakdown.mp4"
+      ]
+    },
+    {
+      "id": "nestgen-burst",
+      "title": "NestGen burst promo (10.8s): cube → radial burst → photo grid → kinetic lines",
+      "kind": "sequence",
+      "tags": [
+        "3d-cube",
+        "radial-burst",
+        "keyword-flythrough",
+        "photo-grid",
+        "detail-card",
+        "kinetic-type",
+        "motion-blur"
+      ],
+      "size": [
+        1920,
+        1080
+      ],
+      "fps": 30,
+      "duration": 10.8,
+      "source": {
+        "type": "file",
+        "ref": "~/Downloads/SnapInsta.to_AQM4Vzinpr…mp4",
+        "note": "Pinterest 'every inspiration in one place' ad, motion matched frame by frame; NestGen photos + drone/dock stills. Latest render: out/nestgen-burst-v3.mp4"
+      },
+      "status": "verified",
+      "engine": "hyperframes",
+      "params": {},
+      "renders": [
+        "nestgen-burst.mp4",
+        "nestgen-burst-v2.mp4",
+        "nestgen-burst-v3.mp4"
+      ]
+    },
+    {
+      "id": "lower-third-nestgen",
+      "title": "NestGen lower third",
+      "kind": "overlay",
+      "tags": [
+        "broadcast",
+        "dot-matrix",
+        "light-trace",
+        "lower-third",
+        "mirrored-outro",
+        "name-tag"
+      ],
+      "size": [
+        1920,
+        1080
+      ],
+      "fps": "30000/1001",
+      "duration": 6.373,
+      "source": {
+        "type": "file",
+        "ref": "reference/lower-third-v2-source.mp4",
+        "note": "client-supplied 'Lower Third Template.mp4'; rebuilt frame-accurate (4.8/255 mean error)"
+      },
+      "status": "verified",
+      "engine": "hyperframes",
+      "params": {
+        "name": {
+          "type": "string",
+          "default": "Nitin Gupta"
+        },
+        "title": {
+          "type": "string",
+          "default": "Founder & CEO"
+        },
+        "company": {
+          "type": "string",
+          "default": "FlytBase",
+          "note": "optional; omitted cleanly when empty"
+        },
+        "theme": {
+          "type": "enum",
+          "options": [
+            "purple",
+            "blue"
+          ],
+          "default": "purple"
+        },
+        "bg": {
+          "type": "enum",
+          "options": [
+            "black",
+            "none",
+            "green",
+            "dark"
+          ],
+          "default": "none"
+        },
+        "outro": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "slots": [],
+      "exports": [
+        "hyperframes",
+        "after-effects"
+      ],
+      "used_by": [
+        "shorts-engine: pipeline/build_short_v2.py"
+      ],
+      "ae": {
+        "layers": 7,
+        "note": "fully editable: text, Trim Paths trace, mask wipes"
+      },
+      "fonts": [
+        "Briallen Disco (name)",
+        "Geist Regular (title, company)"
+      ]
+    },
+    {
+      "id": "lower-third-nestgen-v1",
+      "title": "NestGen lower third (v1, starfield bar)",
+      "kind": "overlay",
+      "tags": [
+        "lower-third",
+        "name-tag",
+        "light-trace",
+        "broadcast"
+      ],
+      "size": [
+        1920,
+        1080
+      ],
+      "fps": "30000/1001",
+      "duration": 10.01,
+      "source": {
+        "type": "file",
+        "ref": "Lower Thirds (1).mp4",
+        "note": "client-supplied green-screen master; rebuilt frame-accurate"
+      },
+      "status": "superseded",
+      "engine": "hyperframes",
+      "params": {
+        "name": {
+          "type": "string",
+          "default": "Aban Aryan"
+        },
+        "title": {
+          "type": "string",
+          "default": "Head of Engineering"
+        },
+        "company": {
+          "type": "string",
+          "default": "",
+          "note": "optional; omitted cleanly when empty"
+        },
+        "theme": {
+          "type": "enum",
+          "options": [
+            "blue",
+            "purple"
+          ],
+          "default": "blue"
+        },
+        "bg": {
+          "type": "enum",
+          "options": [
+            "none",
+            "green",
+            "dark"
+          ],
+          "default": "none"
+        },
+        "outro": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "slots": [],
+      "exports": [
+        "mp4",
+        "mov-alpha",
+        "png-sequence",
+        "after-effects"
+      ],
+      "used_by": [
+        "shorts-engine: pipeline/build_short_v2.py"
+      ],
+      "ae": {
+        "layers": 7,
+        "note": "fully editable: text, Trim Paths trace, mask wipes"
+      }
+    },
+    {
+      "id": "promo-kinetic-20s",
+      "title": "Kinetic product promo (20s, 8 scenes)",
+      "kind": "sequence",
+      "tags": [
+        "kinetic-type",
+        "word-build",
+        "scramble",
+        "pixel-ring",
+        "orbit-tiles",
+        "ui-reveal",
+        "cursor"
+      ],
+      "size": [
+        1920,
+        1080
+      ],
+      "fps": 24,
+      "duration": 20,
+      "source": {
+        "type": "file",
+        "ref": "references/7lA1EtPhxXQxxCtj.mp4",
+        "note": "third-party promo; replicated for motion study. Logos/photos are generic stand-ins."
+      },
+      "status": "verified",
+      "engine": "hyperframes",
+      "params": {
+        "$comment": "copy is inline in index.html for now; lift to params when the template is re-skinned"
+      },
+      "slots": [
+        {
+          "id": "screen",
+          "type": "video",
+          "note": "planned: drop an app screen recording into the scene-8 window"
+        }
+      ],
+      "exports": [
+        "mp4",
+        "png-sequence",
+        "after-effects"
+      ],
+      "used_by": [],
+      "ae": {
+        "layers": 196,
+        "note": "editable text/shape layers; textures simplified — see README"
+      }
+    },
+    {
+      "id": "frontier-explainer-9s",
+      "title": "Frontier explainer (9s): label → icon row → node diagram → chat card",
+      "kind": "sequence",
+      "tags": [
+        "kinetic-caption",
+        "label-chip",
+        "icon-row",
+        "node-diagram",
+        "typing",
+        "chat-ui",
+        "pan"
+      ],
+      "size": [
+        1920,
+        1080
+      ],
+      "fps": 24,
+      "duration": 9.208,
+      "source": {
+        "type": "url",
+        "ref": "https://x.com/CompleteSkeptic/status/2099925682726002904",
+        "segment": "0:08–0:17",
+        "note": "third-party film; replicated for motion study. Icons are generic stand-ins; footage is a slot."
+      },
+      "status": "verified",
+      "engine": "hyperframes",
+      "params": {
+        "label": {
+          "type": "string",
+          "default": "RLHF"
+        },
+        "line1": {
+          "type": "string",
+          "default": "The post ¶ training algorithm"
+        },
+        "line2": {
+          "type": "string",
+          "default": "behind most frontier AI"
+        },
+        "node_top": {
+          "type": "string",
+          "default": "INSTRUCTION"
+        },
+        "node_left": {
+          "type": "string",
+          "default": "Human"
+        },
+        "node_right": {
+          "type": "string",
+          "default": "Response"
+        },
+        "line3": {
+          "type": "string",
+          "default": "Instruction Following"
+        },
+        "chat_title": {
+          "type": "string",
+          "default": "ChatGPT"
+        },
+        "chat_user": {
+          "type": "string",
+          "default": "Summarize this document in three bullet points."
+        },
+        "chat_reply": {
+          "type": "string",
+          "default": "Sure. Here are Three key points of the document:"
+        },
+        "line4": {
+          "type": "string",
+          "default": "Chat"
+        },
+        "accent": {
+          "type": "color",
+          "default": "#ec79a2"
+        }
+      },
+      "slots": [
+        {
+          "id": "footage",
+          "type": "video",
+          "note": "optional talking-head/screen recording behind the graphics"
+        }
+      ],
+      "exports": [
+        "mp4",
+        "png-sequence",
+        "after-effects"
+      ],
+      "ae": {
+        "layers": 43,
+        "note": "text, shape and PNG layers; INSTRUCTION types via Source Text hold keys"
+      },
+      "used_by": []
+    },
+    {
+      "id": "site-privacy",
+      "title": "Site Privacy v1 (dark, FlytBase brand) - superseded by site-privacy-v2",
+      "kind": "sequence",
+      "tags": [
+        "product-film",
+        "rebuilt-ui",
+        "before-after-wipe",
+        "brand-dark"
+      ],
+      "size": [
+        1920,
+        1080
+      ],
+      "fps": 30,
+      "duration": 86.0,
+      "source": {
+        "type": "url",
+        "ref": "https://youtu.be/1NFkNYx3eAM",
+        "note": "First pass in the FlytBase dark brand; the client preferred the light motion-graphics direction (v2)."
+      },
+      "status": "superseded",
+      "engine": "hyperframes",
+      "params": {},
+      "renders": [
+        "site-privacy-v1.mp4"
+      ]
+    }
+  ],
+  "blocks": [
+    {
+      "id": "word-build",
+      "from": "promo-kinetic-20s",
+      "note": "words land coral + off-baseline, settle to ink; line re-centres"
+    },
+    {
+      "id": "glyph-scramble",
+      "from": "promo-kinetic-20s",
+      "note": "12fps glyph noise resolving into words"
+    },
+    {
+      "id": "pixel-ring-bloom",
+      "from": "promo-kinetic-20s",
+      "note": "square-pixel ring expanding out of a text block"
+    },
+    {
+      "id": "orbit-tiles",
+      "from": "promo-kinetic-20s",
+      "note": "icon tiles orbiting a centre point, upright, depth-scaled"
+    },
+    {
+      "id": "light-trace-reveal",
+      "from": "lower-third-nestgen",
+      "note": "light head/tail traces a rect, beam sweep reveals a bar"
+    },
+    {
+      "id": "typed-wordmark",
+      "from": "lower-third-nestgen",
+      "note": "letters type on with the newest ones accented"
+    },
+    {
+      "id": "cursor-click",
+      "from": "promo-kinetic-20s",
+      "note": "labelled cursor glides in, clicks, target reacts"
+    },
+    {
+      "id": "label-chip-wire",
+      "from": "frontier-explainer-9s",
+      "note": "accent label box on an elbow connector, panning"
+    },
+    {
+      "id": "icon-row-popin",
+      "from": "frontier-explainer-9s",
+      "note": "icons popping in one by one along a wire"
+    },
+    {
+      "id": "node-diagram",
+      "from": "frontier-explainer-9s",
+      "note": "typed label, chevron, chips and an orbiting particle node"
+    },
+    {
+      "id": "chat-card",
+      "from": "frontier-explainer-9s",
+      "note": "chat UI sliding in with sequential bubbles"
+    }
+  ]
+}

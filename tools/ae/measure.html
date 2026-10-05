@@ -1,0 +1,43 @@
+<!doctype html><meta charset="utf-8"><title>measuring</title>
+<style>
+@font-face{font-family:"Inter";src:url(/templates/promo-kinetic-20s/assets/fonts/Inter.woff2) format("woff2");font-weight:100 900}
+@font-face{font-family:"Instrument Serif";src:url(/templates/promo-kinetic-20s/assets/fonts/InstrumentSerif-italic-400.woff2) format("woff2");font-style:italic}
+@font-face{font-family:"JetBrains Mono";src:url(/templates/promo-kinetic-20s/assets/fonts/JetBrainsMono-normal-400.woff2) format("woff2")}
+@font-face{font-family:"Libre Caslon Text";src:url(/templates/lower-third-nestgen/assets/fonts/LibreCaslonText-700.woff2) format("woff2");font-weight:700}
+@font-face{font-family:"Briallen Disco";src:url(/templates/lower-third-nestgen/assets/fonts/BriallenDisco-Regular.ttf) format("truetype")}
+@font-face{font-family:"Geist";src:url(/templates/lower-third-nestgen/assets/fonts/Geist-Regular.otf) format("opentype")}
+body{background:#111;color:#ddd;font:14px monospace;padding:20px}
+</style>
+<pre id="out">measuring…</pre>
+<p>Open this page whenever the template fonts change; it saves tools/ae/metrics.json automatically.</p>
+<script>
+const FONTS = [["Inter","400 100px Inter"],["Inter-600","600 100px Inter"],
+  ["Instrument Serif","italic 100px 'Instrument Serif'"],["JetBrains Mono","100px 'JetBrains Mono'"],
+  ["Libre Caslon Text","700 100px 'Libre Caslon Text'"],
+  ["Briallen Disco","100px 'Briallen Disco'"],["Geist","100px 'Geist'"]];
+(async () => {
+  await document.fonts.ready;
+  for (const [, f] of FONTS) { try { await document.fonts.load(f, "ABCabc123"); } catch (e) {} }
+  const c = document.createElement("canvas").getContext("2d");
+  const M = {};
+  for (const [name, font] of FONTS) {
+    c.font = font;
+    const w = {};
+    for (let i = 32; i < 127; i++) { const ch = String.fromCharCode(i); w[ch] = +(c.measureText(ch).width / 100).toFixed(4); }
+    const m = c.measureText("Hxdp");
+    // pair kerning as the browser applies it: width("ab") - width("a") - width("b"), per em
+    const kern = {};
+    for (let i = 32; i < 127; i++) for (let j = 32; j < 127; j++) {
+      const a = String.fromCharCode(i), b = String.fromCharCode(j);
+      const k = (c.measureText(a + b).width - c.measureText(a).width - c.measureText(b).width) / 100;
+      if (Math.abs(k) > 0.0005) kern[a + b] = +k.toFixed(4);
+    }
+    M[name] = { adv: w, kern, ascent: +((m.actualBoundingBoxAscent || 72) / 100).toFixed(3),
+                cap: +((c.measureText("H").actualBoundingBoxAscent || 70) / 100).toFixed(3) };
+  }
+  window.METRICS = M;
+  document.getElementById("out").textContent = JSON.stringify(M);
+  await fetch("/api/metrics", { method: "POST", body: JSON.stringify(M) });
+  document.title = "done";
+})();
+</script>
