@@ -1,0 +1,12 @@
+01|As a kid, I couldn't leave anything alone.|0.45
+02|Remotes. Radios. The old phone in the drawer. I opened all of them.|0.4
+03|Most of them never worked again. I didn't care.|0.55
+04|Then you grow up. Someone tells you to pick a lane, and the screwdriver goes back in the drawer.|0.5
+05|But that itch never really leaves.|0.75
+06|Now there's a new tool in my hand.|0.6
+07|A.I.|0.5
+08|And it lets me open things up again. Ideas. Little tools I build in an evening, break, and build again.|0.45
+09|I'm not an engineer. I'm still just that kid.|0.55
+10|The only thing missing was people who still open things up too.|0.4
+11|That's A.I. Hackers Collective.|0.35
+12|Come tinker with us.|0.6

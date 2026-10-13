@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1440, height=1080" />
+<title>NestGen behind the scenes</title>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Inter"; src: url(assets/fonts/Inter.woff2) format("woff2"); font-weight: 100 900; }
+/* condensed display face: the system's Helvetica Neue Condensed Black (macOS), not shipped; Impact / squashed Inter otherwise */
+@font-face { font-family: "NG Cond"; src: local("HelveticaNeue-CondensedBlack"), local("Helvetica Neue Condensed Black"), local("Impact"); }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1440px; height: 1080px; overflow: hidden; background: #000; }
+#root { position: relative; width: 1440px; height: 1080px; overflow: hidden; background: #000; font-family: "Inter", sans-serif; }
+.full { position: absolute; left: 0; top: 0; width: 1440px; height: 1080px; overflow: hidden; }
+.clip { z-index: 2; }
+.cam { position: absolute; left: 0; top: 0; width: 1440px; height: 1080px; transform-origin: 720px 540px; }
+.cam img, .cell img, .pip img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.vlayer { position: absolute; left: 0; top: 0; width: 1440px; height: 1080px; overflow: hidden; z-index: 3; opacity: 0; transform-origin: 720px 540px; }
+.vlayer video { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+.ov { z-index: 6; }
+.cell { position: absolute; overflow: hidden; box-shadow: inset 0 0 0 1px rgba(10,10,12,.55); }
+.cell .in { position: absolute; left: 0; top: 0; width: 1440px; height: 1080px; transform-origin: 50% 50%; }
+.pip { position: absolute; overflow: hidden; }
+.hud { position: absolute; font-weight: 650; font-size: 21px; letter-spacing: -0.055em; color: #fff; white-space: nowrap; line-height: 1;
+  text-shadow: 0 0 2px rgba(0,0,0,.25); transform: translateY(-50%); }
+.clock { position: absolute; left: 0; top: 0; width: 1440px; height: 1080px; display: flex; align-items: center; justify-content: center;
+  font-size: 104px; font-weight: 400; letter-spacing: -0.02em; color: #fff; font-feature-settings: "tnum"; text-shadow: 0 0 3px rgba(0,0,0,.18); }
+.words { position: absolute; display: flex; justify-content: space-between; align-items: center; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="24.6" data-width="1440" data-height="1080">
+  <!-- footage: authored statically (the renderer pre-extracts frames from markup), shown and moved from JS -->
+  <div id="vl-reach" class="vlayer"><video id="v-reach" src="assets/clips/reach.mp4" data-start="2.88" data-duration="0.36" data-media-start="5.2" data-track-index="40" muted playsinline></video></div>
+  <div id="vl-tracking" class="vlayer"><video id="v-tracking" src="assets/clips/tracking.mp4" data-start="7.24" data-duration="0.36" data-media-start="2.0" data-track-index="41" muted playsinline></video></div>
+  <div id="vl-swingback" class="vlayer"><video id="v-swingback" src="assets/clips/swingback.mp4" data-start="15.24" data-duration="0.48" data-media-start="1.0" data-track-index="42" muted playsinline></video></div>
+  <div id="vl-beyond" class="vlayer"><video id="v-beyond" src="assets/clips/beyond.mp4" data-start="16.52" data-duration="0.6" data-media-start="3.0" data-track-index="43" muted playsinline></video></div>
+</div>
+<script>
+/* =============================================================================================
+   NestGen: behind the scenes (24.6 s, 1440x1080, 25 fps). A run-and-gun BTS edit: whip-pan cut
+   bursts, a condensed title slam with an image-filled first frame and a negative flash, a 3x3
+   tile reveal, an inset punch, time-of-day stamps, a credit line and a black end card, all under
+   a constant metadata frame. Every shot drifts handheld; render at 125 fps + 5-frame blend for
+   real motion blur on the whips.
+   ============================================================================================= */
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({ paused: true });
+const root = document.getElementById("root");
+const W = 1440, H = 1080, FPS = 25, T = 24.6;
+const V = (window.__hyperframes && window.__hyperframes.getVariables && window.__hyperframes.getVariables()) || {};
+const TX = {
+  tl: V.hud_top_left || "BEHIND THE SCENES", tc: V.hud_top_center || "FLYTBASE", tr: V.hud_top_right || "MONDAY",
+  bl: V.hud_bottom_left || "05.10.26", bc: V.hud_bottom_center || "NESTGEN HQ", br: V.hud_bottom_right || "OCTOBER",
+  title: V.title || "NESTGEN", sub: (V.subtitle || "BEHIND THE SCENES").split(/\s+/),
+  clocks: (V.clocks || "09:00,13:00,18:00").split(","), credits: (V.credits || "BUILT TESTED FLOWN BY").split(/\s+/),
+  end: V.end || "NESTGEN", accent: V.accent || "#7A3CF0",
+};
+let track = 1, uid = 0;
+function clip(t0, t1, cls = "") {
+  const d = document.createElement("div");
+  d.className = "clip full " + cls; d.id = "s" + (uid++);
+  d.dataset.start = Math.max(0, t0 - 0.001).toFixed(4); d.dataset.duration = Math.max(0.03, t1 - t0).toFixed(4);
+  d.dataset.trackIndex = String(track++); root.appendChild(d); return d;
+}
+function el(parent, tag, cls, style, html) {
+  const e = document.createElement(tag); if (cls) e.className = cls; if (style) e.setAttribute("style", style);
+  if (html != null) e.innerHTML = html; parent.appendChild(e); return e;
+}
+const src = n => `assets/img/${n}.jpg`;
+function rng(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+/* per-frame driver: props are functions of absolute time, keyed every frame (linear in between) */
+function drive(target, t0, t1, props) {
+  const at = t => { const o = {}; for (const k in props) o[k] = props[k](t); return o; };
+  tl.set(target, at(t0), t0);
+  const n = Math.max(1, Math.round((t1 - t0) * FPS));
+  for (let i = 0; i < n; i++) { const a = t0 + i / FPS, b = t0 + (i + 1) / FPS; tl.to(target, { ...at(b), duration: 1 / FPS, ease: "none" }, a); }
+}
+/* handheld drift: three detuned sines per axis */
+function hand(seed, amp) {
+  const r = rng(seed * 7919 + 13), p = Array.from({ length: 9 }, () => r() * 6.283);
+  return {
+    x: t => amp * (.62 * Math.sin(1.7 * t + p[0]) + .28 * Math.sin(4.3 * t + p[1]) + .1 * Math.sin(9.1 * t + p[2])),
+    y: t => amp * .7 * (.6 * Math.sin(1.3 * t + p[3]) + .3 * Math.sin(3.7 * t + p[4]) + .1 * Math.sin(8.3 * t + p[5])),
+    r: t => amp * .028 * (.7 * Math.sin(1.1 * t + p[6]) + .3 * Math.sin(3.3 * t + p[7])),
+  };
+}
+const GRADE = "contrast(1.07) saturate(.9) brightness(.97)";
+
+/* one shot. o: { whip: px of horizontal travel (sign = direction), ease: "in"|"out"|"lin", push: [s0, s1], amp, blur, pos, vid } */
+function shot(t0, t1, name, o = {}) {
+  const amp = o.amp ?? 7, h = hand(uid + 1, amp);
+  const [s0, s1] = o.push || [1.06, 1.1];
+  const wk = o.whip || 0, wy = o.whipY || 0;
+  const shape = u => o.ease === "out" ? Math.pow(1 - u, 3) : o.ease === "in" ? -Math.pow(u, 3) : (.5 - u);
+  const u = t => Math.min(1, Math.max(0, (t - t0) / (t1 - t0)));
+  const sc = t => (wk || wy ? 1.32 : s0 + (s1 - s0) * u(t));
+  let cam, media;
+  if (o.vid) {
+    cam = document.getElementById("vl-" + o.vid); media = cam.querySelector("video");
+    tl.set(cam, { opacity: 1 }, t0 - 0.0005); tl.set(cam, { opacity: 0 }, t1 - 0.0005);
+  } else {
+    const c = clip(t0, t1); cam = el(c, "div", "cam"); media = el(cam, "img"); media.src = src(name);
+    if (o.pos) media.style.objectPosition = o.pos;
+  }
+  media.style.filter = GRADE + (o.blur ? ` blur(${o.blur}px)` : "");
+  drive(cam, t0, t1, {
+    x: t => h.x(t) + wk * shape(u(t)), y: t => h.y(t) + wy * shape(u(t)),
+    rotation: t => h.r(t), scale: sc,
+  });
+  return { cam, media };
+}
+const flash = (m, t0, t1, f) => { tl.set(m, { filter: f }, t0); tl.set(m, { filter: GRADE }, t1); };
+const NEG = "invert(1) contrast(.92) brightness(1.12)";
+const HOT = "brightness(2.5) contrast(.72) saturate(.45)";
+
+/* ============ A  whip-pan burst (0-1.84) ================================================== */
+shot(0.00, 0.16, "ng02", { whip: 520, ease: "lin", blur: 1.5 });
+shot(0.16, 0.28, "ng05", { whip: -480, ease: "lin", blur: 1 });
+shot(0.28, 0.40, "dr14", { whip: 560, ease: "lin" });
+shot(0.40, 0.60, "ng06", { whip: 260, ease: "out", amp: 10 });
+shot(0.60, 0.88, "ng03", { push: [1.08, 1.13], amp: 9 });
+shot(0.88, 0.96, "ng08", { whip: -600, ease: "lin", blur: 2 });
+const s7 = shot(0.96, 1.12, "dr11", { push: [1.12, 1.16] });
+{ /* inset punch: the next shot opens as a framed inset for two frames, then takes the screen */
+  const c = clip(1.04, 1.12, "ov"); const p = el(c, "div", "pip", "left:86px;top:172px;width:1340px;height:756px");
+  const im = el(p, "img"); im.src = src("dr10"); im.style.filter = GRADE;
+  tl.fromTo(p, { scale: .9, transformOrigin: "60% 50%" }, { scale: 1, duration: .08, ease: "power2.out" }, 1.04);
+}
+shot(1.12, 1.20, "dr10", { push: [1.02, 1.04] });
+shot(1.20, 1.28, "ng07", { amp: 5 });
+shot(1.28, 1.36, "ng08", { amp: 5, pos: "70% 50%" });
+shot(1.36, 1.44, "dr12", { push: [1.3, 1.32], pos: "50% 30%" });
+shot(1.44, 1.52, "dr15", { push: [1.15, 1.18] });
+shot(1.52, 1.64, "dr13", { push: [1.08, 1.1], pos: "50% 60%" });
+shot(1.64, 1.84, "dr04", { push: [1.04, 1.05], amp: 3 });
+
+/* ============ B  title slam (1.84-2.88) =================================================== */
+const wide = shot(1.84, 2.72, "ng01", { push: [1.08, 1.11], amp: 8 });
+{ /* the whip into the wide: a decelerating pan over the first three frames */
+  tl.fromTo(wide.media, { x: -170 }, { x: 0, duration: .14, ease: "power3.out" }, 1.84);
+}
+flash(wide.media, 2.64, 2.72, NEG);
+shot(2.72, 2.88, "dr12", { push: [1.22, 1.24], blur: 7, pos: "50% 40%", amp: 4 });
+{
+  const c = clip(2.28, 2.88, "ov"); c.style.zIndex = 8;
+  const TW = 1080, TH = 452, X = 724 - TW / 2, Y = 540 - TH / 2;      // letter block: 1080 x 452, centred a touch right
+  const fs = TH / 0.716;                                              // cap height of the condensed face is ~0.716 em
+  const svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="position:absolute;left:0;top:0;overflow:visible">
+    <defs><clipPath id="tclip"><text x="${X}" y="${Y + TH}" font-family="NG Cond, Inter" font-weight="900" font-size="${fs}" textLength="${TW}" lengthAdjust="spacingAndGlyphs">${TX.title}</text></clipPath></defs>
+    <g id="tImg" clip-path="url(#tclip)"><image href="${src("dr02")}" x="${X - 40}" y="${Y - 60}" width="${TW + 80}" height="${TH + 120}" preserveAspectRatio="xMidYMid slice" style="filter:brightness(1.6) contrast(.85) saturate(.6)"/></g>
+    <text id="tTxt" x="${X}" y="${Y + TH}" font-family="NG Cond, Inter" font-weight="900" font-size="${fs}" textLength="${TW}" lengthAdjust="spacingAndGlyphs" fill="#fff" opacity="0">${TX.title}</text></svg>`;
+  el(c, "div", "full", "overflow:visible", svg);
+  const sub = el(c, "div", "words", `left:${X + 66}px;width:${TW - 124}px;top:${540 - 26}px;height:52px;font-size:50px;font-weight:700;letter-spacing:-0.045em;color:#fff;opacity:0`,
+    TX.sub.map(w => `<span>${w}</span>`).join(""));
+  const tImg = c.querySelector("#tImg"), tTxt = c.querySelector("#tTxt");
+  tl.set(tImg, { opacity: 0 }, 2.32);                                  // f1: the letters are windows onto another shot
+  tl.set(tTxt, { opacity: 1, fill: "#fff" }, 2.32);                     // f2-3: white
+  tl.set(tTxt, { fill: TX.accent }, 2.40);                              // f4+: brand colour, words land
+  tl.set(sub, { opacity: 1 }, 2.40);
+}
+
+/* ============ C  cut run (2.88-5.84) ====================================================== */
+shot(2.88, 3.24, null, { vid: "reach", push: [1.08, 1.12], amp: 9 });
+shot(3.24, 3.40, "ng09", { amp: 8 });
+shot(3.40, 3.44, "ng11", { whip: 400, ease: "lin", blur: 2 });
+shot(3.44, 3.52, "ng10", { amp: 6 });
+shot(3.52, 3.56, "dr03", { whip: -380, ease: "lin" });
+shot(3.56, 3.68, "dr06", { push: [1.1, 1.12], pos: "50% 55%" });
+shot(3.68, 3.96, "ng12", { push: [1.1, 1.15], amp: 9 });
+shot(3.96, 4.00, "dr01", { whip: 420, ease: "lin", blur: 1.5 });
+shot(4.00, 4.32, "ng04", { push: [1.06, 1.1], amp: 8 });
+shot(4.32, 4.44, "dr02", { push: [1.12, 1.14] });
+["ng05", "dr14", "ng07", "dr09", "ng02", "dr15"].forEach((n, i) =>     // staccato: one frame each
+  shot(4.44 + i * .04, 4.48 + i * .04, n, { push: [1.1 + i * .02, 1.1 + i * .02], amp: 6 }));
+shot(4.68, 4.84, "ng06", { whip: 160, ease: "out", amp: 8 });
+["dr03", "ng08", "dr04", "ng10"].forEach((n, i) =>
+  shot(4.84 + i * .04, 4.88 + i * .04, n, { push: [1.12, 1.12], amp: 6 }));
+shot(5.00, 5.20, "dr10", { push: [1.05, 1.08] });
+shot(5.20, 6.36, "ng00", { push: [1.04, 1.1], amp: 8, pos: "50% 62%" });
+
+/* ============ D  3x3 tile reveal (5.80-6.36), white flash out (6.48) ======================= */
+{
+  const c = clip(5.80, 6.36, "ov");
+  const order = [[8, 5.80], [6, 5.84], [7, 5.92], [2, 5.96], [3, 6.08], [5, 6.12], [4, 6.16], [1, 6.20], [0, 6.28]];
+  order.forEach(([k, t]) => {
+    const col = k % 3, row = Math.floor(k / 3);
+    const cell = el(c, "div", "cell", `left:${col * 480}px;top:${row * 360}px;width:480px;height:360px;opacity:0`);
+    const inn = el(cell, "div", "in", `left:${-col * 480}px;top:${-row * 360}px`);
+    const im = el(inn, "img"); im.src = src("ng12"); im.style.filter = HOT;
+    tl.set(cell, { opacity: 1 }, t);                                     // each tile lands overexposed for a frame,
+    tl.set(im, { filter: GRADE }, t + .04);                             // then settles into the picture
+    tl.fromTo(inn, { scale: 1.16 }, { scale: 1.1, duration: .2, ease: "power2.out" }, t);
+  });
+}
+const close = shot(6.36, 6.52, "ng12", { push: [1.1, 1.11], amp: 6 });
+flash(close.media, 6.48, 6.52, HOT);
+
+/* ============ E  first time stamp (6.52-8.56) ============================================= */
+shot(6.52, 6.80, "dr01", { push: [1.1, 1.14], amp: 7 });
+shot(6.80, 7.24, "ng04", { push: [1.25, 1.3], pos: "40% 45%", amp: 8 });
+shot(7.24, 7.60, null, { vid: "tracking", push: [1.06, 1.1], amp: 7 });
+shot(7.60, 8.12, "ng09", { push: [1.06, 1.1], amp: 7 });
+shot(8.12, 8.56, "dr11", { push: [1.1, 1.16], amp: 7 });
+
+/* ============ F  cut run into a defocus (8.56-10.16) ====================================== */
+shot(8.56, 8.64, "ng05", { whip: -460, ease: "lin", blur: 1 });
+shot(8.64, 8.68, "dr06", { push: [1.12, 1.12] });
+shot(8.68, 8.72, "ng02", { push: [1.12, 1.12] });
+shot(8.72, 8.96, "dr14", { push: [1.1, 1.14], amp: 6 });
+shot(8.96, 9.36, "ng08", { push: [1.06, 1.1], amp: 8 });
+shot(9.36, 9.40, "dr03", { whip: 380, ease: "lin" });
+shot(9.40, 9.44, "ng06", { push: [1.14, 1.14] });
+shot(9.44, 9.64, "dr09", { push: [1.08, 1.11], amp: 6 });
+["ng07", "dr15", "ng10", "dr02"].forEach((n, i) =>
+  shot(9.64 + i * .04, 9.68 + i * .04, n, { push: [1.12, 1.12], amp: 6 }));
+{ /* rack out: the shot drifts out of focus */
+  const s = shot(9.80, 10.16, "dr10", { push: [1.3, 1.36], amp: 5, blur: 22 });
+  tl.fromTo(s.media, { filter: GRADE + " blur(10px)" }, { filter: GRADE + " blur(26px)", duration: .36, ease: "none" }, 9.80);
+}
+
+/* ============ G  talking head (10.16-13.04): one hold, a jump cut in, stamp on top ========== */
+shot(10.16, 11.56, "ng11", { push: [1.08, 1.11], amp: 9, pos: "55% 40%" });
+shot(11.56, 13.04, "ng11", { push: [1.22, 1.25], amp: 9, pos: "55% 35%" });
+
+/* ============ H  (13.04-15.24) ============================================================ */
+shot(13.04, 13.56, "ng05", { push: [1.08, 1.12], amp: 8 });
+shot(13.56, 13.88, "ng10", { push: [1.15, 1.2], amp: 8, pos: "30% 50%" });
+shot(13.88, 15.12, "ng06", { push: [1.12, 1.2], amp: 9, pos: "35% 45%" });
+shot(15.12, 15.16, "dr04", { push: [1.12, 1.12] });
+shot(15.16, 15.24, "dr12", { whip: -300, ease: "lin", pos: "50% 30%" });
+
+/* ============ I  (15.24-18.04) ============================================================ */
+shot(15.24, 15.72, null, { vid: "swingback", push: [1.06, 1.1], amp: 7 });
+shot(15.72, 16.08, "ng07", { push: [1.06, 1.1], amp: 8 });
+shot(16.08, 16.52, "dr03", { push: [1.06, 1.12], amp: 6 });
+shot(16.52, 17.12, null, { vid: "beyond", push: [1.06, 1.1], amp: 7 });
+shot(17.12, 17.88, "ng08", { push: [1.06, 1.12], amp: 9 });
+shot(17.88, 17.92, "ng02", { push: [1.14, 1.14] });
+shot(17.92, 18.00, "dr14", { whip: 340, ease: "lin" });
+shot(18.00, 18.04, "ng04", { push: [1.14, 1.14] });
+
+/* ============ J  credit hold (18.04-21.92) ================================================ */
+shot(18.04, 21.56, "main", { push: [1.12, 1.24], amp: 10, pos: "50% 35%" });
+shot(21.56, 21.64, "ng01", { push: [1.12, 1.12], amp: 6 });
+shot(21.64, 21.68, "dr04", { push: [1.12, 1.12] });
+const last = shot(21.68, 21.92, "ng03", { push: [1.1, 1.12], amp: 8 });
+flash(last.media, 21.88, 21.92, NEG);
+
+/* ============ overlays ==================================================================== */
+{ /* time stamps */
+  [[7.96, 8.56, 0], [10.28, 12.84, 1], [13.96, 14.84, 2]].forEach(([a, b, i]) => {
+    const c = clip(a, b, "ov"); c.style.zIndex = 7; el(c, "div", "clock", "", TX.clocks[i] || "");
+  });
+}
+{ /* credit line */
+  const c = clip(19.08, 21.88, "ov"); c.style.zIndex = 7;
+  el(c, "div", "words", `left:311px;width:882px;top:510px;height:56px;font-family:'NG Cond',Inter;font-weight:900;font-size:62px;letter-spacing:.005em;color:${TX.accent}`,
+    TX.credits.map(w => `<span>${w}</span>`).join(""));
+}
+{ /* end card */
+  const c = clip(21.92, T, ""); c.style.zIndex = 9; c.style.background = "#000";
+  const t = el(c, "div", "", "position:absolute;left:0;top:0;width:1440px;height:1080px;display:flex;align-items:center;justify-content:center;font-size:58px;font-weight:700;letter-spacing:-0.05em;color:#fff;opacity:0", TX.end);
+  tl.set(t, { opacity: 1 }, 22.08);
+}
+{ /* metadata frame + grain + vignette, over everything until the end card */
+  const c = clip(0, 21.92, "ov"); c.style.zIndex = 8;
+  el(c, "div", "full", "background:radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,.28) 100%)");
+  el(c, "div", "full", "mix-blend-mode:overlay;opacity:.16",
+    `<svg width="${W}" height="${H}"><filter id="gr"><feTurbulence id="turb" type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="1"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#gr)"/></svg>`);
+  const turb = c.querySelector("#turb");
+  for (let f = 0; f < Math.round(21.92 * FPS); f++) tl.set(turb, { attr: { seed: 1 + (f * 37) % 997 } }, f / FPS);
+  const hud = (txt, css) => el(c, "div", "hud", css, txt);
+  hud(TX.tl, "left:44px;top:40px");
+  hud(TX.tc, "left:0;width:1440px;text-align:center;top:40px");
+  hud(TX.tr, "right:74px;top:40px");
+  hud(TX.bl, "left:56px;top:1032px");
+  hud(TX.bc, "left:0;width:1440px;text-align:center;top:1032px");
+  hud(TX.br, "right:74px;top:1032px");
+}
+
+tl.set({}, {}, T);
+window.__timelines["main"] = tl;
+</script>
+</body>
+</html>

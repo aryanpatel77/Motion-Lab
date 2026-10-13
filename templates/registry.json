@@ -2,6 +2,124 @@
   "$comment": "Motion Lab template registry. One entry per template folder. `params` are what a user may change; `slots` are media they can drop in.",
   "templates": [
     {
+      "id": "ai-hackers-collective",
+      "title": "AI Hackers Collective caption film (43s): voiceover, word-by-word captions, yellow and black cards, 8 footage slots",
+      "kind": "sequence",
+      "tags": [
+        "captions",
+        "kinetic-type",
+        "voiceover",
+        "word-sync",
+        "colour-cards",
+        "footage-slots"
+      ],
+      "size": [
+        1440,
+        1080
+      ],
+      "fps": 30,
+      "duration": 43,
+      "source": {
+        "type": "url",
+        "ref": "https://www.instagram.com/reel/Dcq-lPKx3hI/",
+        "note": "Instagram caption reel used for storytelling shape and caption style only (references/video-by-ethan-cortess). Script, voice (local Kokoro TTS), captions and music are original; footage slots A-H await the community's own clips."
+      },
+      "status": "draft",
+      "engine": "hyperframes",
+      "params": {},
+      "renders": [
+        "ai-hackers-collective-draft.mp4"
+      ]
+    },
+    {
+      "id": "ai-in-action",
+      "title": "AI in Action event promo (23.6s), v2 built from layers on measured motion",
+      "kind": "sequence",
+      "tags": [
+        "kinetic-type",
+        "block-cursor",
+        "selection-handles",
+        "pen-marks",
+        "four-point-star",
+        "spotlight",
+        "heat-map-silhouette",
+        "pixel-icons",
+        "icon-ring",
+        "ink-blots",
+        "word-beats",
+        "conveyor",
+        "letter-scatter",
+        "event-card",
+        "motion-blur"
+      ],
+      "size": [
+        1440,
+        1080
+      ],
+      "fps": 24,
+      "duration": 23.6,
+      "source": {
+        "type": "url",
+        "ref": "https://www.instagram.com/reel/DeKDmkmh_gM/",
+        "note": "Instagram kinetic-type reel used for motion timing and visual language only (references/video-by-jordans-archivess). All artwork (pixel icons, the agent head, the palm, scribbles), copy and sound are original; no photos or footage."
+      },
+      "status": "verified",
+      "engine": "hyperframes",
+      "params": {},
+      "renders": [
+        "ai-in-action-v2.mp4",
+        "ai-in-action-v1.mp4",
+        "ai-in-action.mp4"
+      ]
+    },
+    {
+      "id": "nestgen-bts",
+      "title": "NestGen behind the scenes (24.6s): whip-pan bursts, title slam, tile reveal, time stamps, credit line",
+      "kind": "sequence",
+      "tags": [
+        "bts-edit",
+        "whip-pan",
+        "title-slam",
+        "negative-flash",
+        "tile-reveal",
+        "inset-punch",
+        "time-stamps",
+        "metadata-frame",
+        "film-grain",
+        "motion-blur"
+      ],
+      "size": [
+        1440,
+        1080
+      ],
+      "fps": 25,
+      "duration": 24.6,
+      "source": {
+        "type": "url",
+        "ref": "https://www.instagram.com/reel/DdGNxdOSyPF/",
+        "note": "Instagram BTS reel used for edit rhythm and overlay timing only (references/video-by-photovirus). All shots, words, colours and sound are NestGen's own; footage slots take real BTS clips."
+      },
+      "status": "verified",
+      "engine": "hyperframes",
+      "params": {
+        "title": "NESTGEN",
+        "subtitle": "BEHIND THE SCENES",
+        "hud_top_left": "BEHIND THE SCENES",
+        "hud_top_center": "FLYTBASE",
+        "hud_top_right": "MONDAY",
+        "hud_bottom_left": "05.10.26",
+        "hud_bottom_center": "NESTGEN HQ",
+        "hud_bottom_right": "OCTOBER",
+        "clocks": "09:00,13:00,18:00",
+        "credits": "BUILT TESTED FLOWN BY",
+        "end": "NESTGEN",
+        "accent": "#7A3CF0"
+      },
+      "renders": [
+        "nestgen-bts.mp4"
+      ]
+    },
+    {
       "id": "site-privacy-v2",
       "title": "Site Privacy: light motion-graphics product film (70s)",
       "kind": "sequence",
@@ -26,7 +144,7 @@
       "duration": 70.0,
       "source": {
         "type": "file",
-        "ref": "~/Downloads/SnapInsta.to_AQOWDJ1mt1…mp4",
+        "ref": "~/Downloads/SnapInsta.to_AQOWDJ1mt1\u2026mp4",
         "note": "Shapes HR launch film used as the motion reference; FlytBase Blur outside Geofence content. Latest render: out/site-privacy-v4.mp4; breakdown: out/site-privacy-breakdown.mp4"
       },
       "status": "verified",
@@ -42,7 +160,7 @@
     },
     {
       "id": "nestgen-burst",
-      "title": "NestGen burst promo (10.8s): cube → radial burst → photo grid → kinetic lines",
+      "title": "NestGen burst promo (10.8s): cube \u2192 radial burst \u2192 photo grid \u2192 kinetic lines",
       "kind": "sequence",
       "tags": [
         "3d-cube",
@@ -61,7 +179,7 @@
       "duration": 10.8,
       "source": {
         "type": "file",
-        "ref": "~/Downloads/SnapInsta.to_AQM4Vzinpr…mp4",
+        "ref": "~/Downloads/SnapInsta.to_AQM4Vzinpr\u2026mp4",
         "note": "Pinterest 'every inspiration in one place' ad, motion matched frame by frame; NestGen photos + drone/dock stills. Latest render: out/nestgen-burst-v3.mp4"
       },
       "status": "verified",
@@ -270,12 +388,12 @@
       "used_by": [],
       "ae": {
         "layers": 196,
-        "note": "editable text/shape layers; textures simplified — see README"
+        "note": "editable text/shape layers; textures simplified \u2014 see README"
       }
     },
     {
       "id": "frontier-explainer-9s",
-      "title": "Frontier explainer (9s): label → icon row → node diagram → chat card",
+      "title": "Frontier explainer (9s): label \u2192 icon row \u2192 node diagram \u2192 chat card",
       "kind": "sequence",
       "tags": [
         "kinetic-caption",
@@ -295,7 +413,7 @@
       "source": {
         "type": "url",
         "ref": "https://x.com/CompleteSkeptic/status/2099925682726002904",
-        "segment": "0:08–0:17",
+        "segment": "0:08\u20130:17",
         "note": "third-party film; replicated for motion study. Icons are generic stand-ins; footage is a slot."
       },
       "status": "verified",
@@ -307,7 +425,7 @@
         },
         "line1": {
           "type": "string",
-          "default": "The post ¶ training algorithm"
+          "default": "The post \u00b6 training algorithm"
         },
         "line2": {
           "type": "string",

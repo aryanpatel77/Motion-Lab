@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1440, height=1080" />
+<title>AI in Action: multi-agent systems</title>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Inter"; src: url(assets/fonts/Inter.woff2) format("woff2"); font-weight: 100 900; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1440px; height: 1080px; overflow: hidden; background: #121014; }
+#root { position: relative; width: 1440px; height: 1080px; overflow: hidden; background: #121014; font-family: "Inter", sans-serif; }
+.full { position: absolute; left: 0; top: 0; width: 1440px; height: 1080px; overflow: hidden; }
+.abs { position: absolute; }
+.paper { background: #E6E5E9 url(assets/layers/paper.png) 0 0 / 1440px 1080px; }
+.dark { background: #141215 url(assets/layers/dark.png) 0 0 / 1440px 1080px; }
+.lay { position: absolute; display: block; pointer-events: none; }
+.ln { position: absolute; white-space: pre; font-weight: 700; letter-spacing: -0.035em; line-height: 1; transform: translateY(-50%); }
+.ln .c { display: none; }
+.cur { display: inline-block; width: 4px; height: .86em; margin-left: .28em; vertical-align: -0.06em; background: currentColor; }
+.hdl { position: absolute; width: 11px; height: 11px; background: #F0EFF2; border: 2px solid #17151A; }
+svg { overflow: visible; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="23.6" data-width="1440" data-height="1080"></div>
+<script>
+/* =============================================================================================
+   AI in Action: "How To Build Multi Agent Systems That Don't Break in Production" (23.6 s,
+   1440x1080, 24 fps), v2: built from layers. Every element is its own rendered layer (make_layers.py:
+   32-px pixel icons with rim light and sticker edges, heat-mapped silhouettes, the bloomed star, ink,
+   paper) and moves on curves measured from the reference reel (measure_ref.py -> ref_curves.json):
+   overshoots, speed ramps, blur-ins, drifts. All artwork is original. Render 120 fps + 5-frame blend.
+   ============================================================================================= */
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({ paused: true });
+const root = document.getElementById("root");
+const W = 1440, H = 1080, FPS = 24, T = 23.6;
+const F = f => (f - 1) / FPS;                                          // reference frame -> seconds
+const INK = "#17151A", GREY = "#9C99A2", RED = "#D3161C", WHITE = "#F4F2F5";
+const LAY = n => `assets/layers/${n}.png`;
+let track = 1, uid = 0;
+function clip(t0, t1, cls = "", z = 2) {
+  const d = document.createElement("div");
+  d.className = "full " + cls; d.id = "s" + (uid++); d.style.zIndex = z;
+  d.dataset.start = Math.max(0, t0 - 0.001).toFixed(4); d.dataset.duration = Math.max(0.03, t1 - t0).toFixed(4);
+  d.dataset.trackIndex = String(track++); root.appendChild(d); return d;
+}
+function el(parent, tag, cls, style, html) {
+  const e = document.createElement(tag); if (cls) e.className = cls; if (style) e.setAttribute("style", style);
+  if (html != null) e.innerHTML = html; parent.appendChild(e); return e;
+}
+function layer(parent, name, x, y, w, h, style = "") { const i = el(parent, "img", "lay", `left:${x}px;top:${y}px;width:${w}px;${h ? `height:${h}px;` : ""}${style}`); i.src = LAY(name); return i; }
+function rng(seed) { let s = seed >>> 0 || 1; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+function drive(target, t0, t1, props) {
+  const at = t => { const o = {}; for (const k in props) o[k] = props[k](t); return o; };
+  tl.set(target, at(t0), t0);
+  const n = Math.max(1, Math.round((t1 - t0) * FPS));
+  for (let i = 0; i < n; i++) { const a = t0 + i / FPS, b = t0 + (i + 1) / FPS; tl.to(target, { ...at(b), duration: 1 / FPS, ease: "none" }, a); }
+}
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const eOut = x => 1 - Math.pow(1 - clamp(x), 3), eIn = x => Math.pow(clamp(x), 3), eIO = x => (x = clamp(x), x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+/* measured keyframes -> smooth function of time (Catmull-Rom through the samples) */
+function curve(pts) {
+  return t => {
+    const n = pts.length; if (t <= pts[0][0]) return pts[0][1]; if (t >= pts[n - 1][0]) return pts[n - 1][1];
+    let i = 0; while (t > pts[i + 1][0]) i++;
+    const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(n - 1, i + 2)], dt = p2[0] - p1[0], u = (t - p1[0]) / dt;
+    const m1 = (p2[1] - p0[1]) / (p2[0] - p0[0]) * dt, m2 = (p3[1] - p1[1]) / (p3[0] - p1[0]) * dt, u2 = u * u, u3 = u2 * u;
+    return (2 * u3 - 3 * u2 + 1) * p1[1] + (u3 - 2 * u2 + u) * m1 + (-2 * u3 + 3 * u2) * p2[1] + (u3 - u2) * m2;
+  };
+}
+/* a per-frame speed table (units per reference frame) integrated into a position, as a function of time */
+function integrate(f0, f1, speed) {
+  const v = curve(speed), acc = [0];
+  for (let f = f0; f < f1; f++) acc.push(acc[acc.length - 1] + v(f + .5));
+  return t => { const f = (t * FPS + 1) - f0; if (f <= 0) return 0; if (f >= acc.length - 1) return acc[acc.length - 1] + (f - acc.length + 1) * v(f1);
+    const i = Math.floor(f); return acc[i] + (acc[i + 1] - acc[i]) * (f - i); };
+}
+const SVGNS = "http://www.w3.org/2000/svg";
+function svg(parent, w, h, style = "") { return el(parent, "div", "abs", `left:0;top:0;width:${w}px;height:${h}px;${style}`, `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"></svg>`).firstChild; }
+function sv(parent, tag, attrs) { const e = document.createElementNS(SVGNS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; }
+function icon(parent, name, cx, cy, size, rot = 0) { const i = layer(parent, "icon_" + name, cx - size / 2, cy - size / 2, size, size); gsap.set(i, { rotation: rot }); return i; }
+
+/* ---- type ----------------------------------------------------------------------------------- */
+function line(parent, text, x, y, size, color, extra = "") {
+  const d = el(parent, "div", "ln", `left:${x}px;top:${y}px;font-size:${size}px;color:${color};${extra}`);
+  const chars = [...text].map(ch => el(d, "span", "c", "", ch === " " ? " " : ch));
+  const cur = el(d, "span", "cur", "opacity:0");
+  return { d, chars, cur, text };
+}
+function type(L, t0, t1, a = 0, b = L.chars.length, o = {}) {
+  const n = b - a; if (n <= 0) return;
+  for (let i = 0; i < n; i++) {
+    const c = L.chars[a + i], t = t0 + (t1 - t0) * i / n;
+    tl.set(c, { display: "inline", color: o.fresh || null }, t);
+    if (o.fresh) tl.set(c, { color: o.settle || null }, t + (o.settleAfter ?? .14));
+  }
+  if (o.cursor !== false) {
+    tl.set(L.cur, { opacity: 1, width: o.block ? "1.3em" : 4, marginLeft: o.block ? "0.06em" : "0.28em" }, t0);
+    if (o.block) tl.set(L.cur, { width: 4, marginLeft: "0.3em" }, t1 + .042);
+    if (o.slide) tl.fromTo(L.cur, { x: 0 }, { x: o.slide, duration: o.slideDur || .5, ease: "power3.out" }, t1 + .042);   // the caret eases out after the word
+  }
+}
+function untype(L, t0, t1, a, b) { const n = b - a; for (let i = 0; i < n; i++) tl.set(L.chars[b - 1 - i], { display: "none" }, t0 + (t1 - t0) * i / n); }
+function blink(L, t0, t1, on = true) { for (let t = t0, k = 0; t < t1; t += 1 / 3, k++) tl.set(L.cur, { opacity: k % 2 ? 1 : 0 }, t); if (!on) tl.set(L.cur, { opacity: 0 }, t1); }
+
+/* ---- pen marks -------------------------------------------------------------------------------- */
+function scribble(seed, x0, y0, w, loops, r, wob = 1) {
+  const R = rng(seed), pts = [], n = loops * 18;
+  for (let i = 0; i <= n; i++) { const u = i / n, a = u * loops * 2 * Math.PI;
+    pts.push([x0 + w * u + r * Math.cos(a + Math.PI) * (.6 + .5 * R()) * wob, y0 + r * .9 * Math.sin(a) * (.7 + .5 * R()) - 10 * Math.sin(u * 3.1)]); }
+  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+  for (let i = 1; i < pts.length - 1; i++) { const mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2; d += ` Q${pts[i][0].toFixed(1)},${pts[i][1].toFixed(1)} ${mx.toFixed(1)},${my.toFixed(1)}`; }
+  return d;
+}
+function pen(svgEl, d, color, width, t0, t1, o = {}) {
+  const p = sv(svgEl, "path", { d, fill: "none", stroke: color, "stroke-width": width, "stroke-linecap": "round", "stroke-linejoin": "round" });
+  const L = p.getTotalLength() + 2; p.style.strokeDasharray = `${L} ${L}`;
+  tl.fromTo(p, { strokeDashoffset: L }, { strokeDashoffset: 0, duration: t1 - t0, ease: o.ease || "power2.out" }, t0);
+  if (o.off) tl.to(p, { strokeDashoffset: -L, duration: o.offDur || .12, ease: "power2.in" }, o.off);
+  if (o.hide) tl.set(p, { opacity: 0 }, o.hide);
+  return p;
+}
+function sparks(parent, x, y, n, color, t, seed, len = 120) {
+  const s = svg(parent, W, H); const R = rng(seed);
+  for (let i = 0; i < n; i++) {
+    const a = R() * 6.28, d0 = 60 + R() * 80; let px = x + Math.cos(a) * d0, py = y + Math.sin(a) * d0, dpath = `M${px.toFixed(0)},${py.toFixed(0)}`;
+    for (let k = 0; k < 4; k++) { px += Math.cos(a) * len / 4 + (R() - .5) * 40; py += Math.sin(a) * len / 4 + (R() - .5) * 40; dpath += ` L${px.toFixed(0)},${py.toFixed(0)}`; }
+    const p = sv(s, "path", { d: dpath, fill: "none", stroke: color, "stroke-width": 3, "stroke-linecap": "round", opacity: 0 });
+    tl.set(p, { opacity: 1 }, t); tl.set(p, { opacity: 0 }, t + .125);
+  }
+}
+const ink = (parent, k, x, y, size) => layer(parent, "ink_" + (k % 6), x - size / 2, y - size / 2, size, size);
+
+/* ============================================================================================
+   S1  big type (0 - 0.667)
+   ============================================================================================ */
+{
+  const c = clip(0, .083, "paper"); const s = svg(c, W, H);
+  sv(s, "path", { d: "M560,330 L540,700 M548,520 C600,470 650,470 640,560 L630,690 M700,560 C660,560 670,690 720,690 C780,690 770,560 720,560 Z M800,560 L830,690 L870,600 L900,690 L950,540",
+    fill: "none", stroke: INK, "stroke-width": 9, "stroke-linecap": "round", "stroke-linejoin": "round" });
+  sv(s, "path", { d: "M520,600 C600,640 760,610 960,640", fill: "none", stroke: INK, "stroke-width": 3, opacity: .6 });
+}
+{
+  const c = clip(.083, .167, "", 3); c.style.background = "#E7B21F";
+  el(c, "div", "abs", `left:0;top:110px;width:1440px;border-top:5px dashed ${INK}`); el(c, "div", "abs", `left:0;top:960px;width:1440px;border-top:5px dashed ${INK}`);
+  el(c, "div", "abs", `left:0;top:0;width:1440px;height:1080px;display:flex;align-items:center;justify-content:center;font-size:320px;font-weight:800;letter-spacing:-0.05em;color:${INK}`, "how");
+}
+{
+  const c = clip(.167, .583, "paper", 3);
+  el(c, "div", "abs", `left:0;top:420px;width:1440px;border-top:3px dashed rgba(23,21,26,.55)`); el(c, "div", "abs", `left:0;top:660px;width:1440px;border-top:3px dashed rgba(23,21,26,.55)`);
+  const rail = el(c, "div", "abs", "left:0;top:0;width:3000px;height:1080px");
+  const L = line(rail, "how do you build", 560, 540, 330, INK, "font-weight:800;letter-spacing:-0.05em");
+  tl.set(L.chars.slice(0, 3), { display: "inline" }, .167);
+  type(L, .25, .5, 3, 16, { cursor: true });
+  drive(rail, .167, .583, { x: t => -1250 * eIn((t - .167) / .416) - 60 * ((t - .167) / .416) });
+  const bar = el(c, "div", "abs", `left:1440px;top:470px;width:420px;height:150px;background:#0E0C10`);
+  tl.fromTo(bar, { x: 0 }, { x: -1100, duration: .125, ease: "none" }, .333); tl.set(bar, { opacity: 0 }, .458);
+  const s = svg(c, W, H); pen(s, "M0,690 C300,700 520,640 760,700 C900,730 1000,650 1100,690", INK, 4, .25, .333, { off: .36 });
+}
+{
+  const c = clip(.583, .667, "paper", 3);
+  const R = rng(5); let x = 380;
+  for (let i = 0; i < 9; i++) { const w = 18 + R() * 40; el(c, "div", "abs", `left:${x}px;top:536px;width:${w}px;height:7px;background:${INK};border-radius:2px;opacity:.85`); x += w + 14 + R() * 30; }
+  el(c, "div", "abs", `left:${x + 70}px;top:505px;width:6px;height:70px;background:${INK}`);
+}
+
+/* ============================================================================================
+   S2-S4  the small sentence (0.667 - 3.917)
+   ============================================================================================ */
+const SENT = "how do you build agents that don't break in production?";
+const sentBg = clip(.667, 3.917, "paper", 2);
+{
+  const s = svg(sentBg, W, H, "filter:blur(7px);opacity:.28");
+  const p = pen(s, scribble(11, 760, 230, 560, 5, 70, 1.3), INK, 16, .75, 1.1, { ease: "none" });
+  tl.to(p.parentNode.parentNode, { x: -160, duration: 1.2, ease: "none" }, .75); tl.set(p, { opacity: 0 }, 1.6);
+}
+const S = clip(.667, 3.917, "", 20);
+const L = line(S, SENT, 48, 540, 40, INK);
+{
+  const ix = w => SENT.indexOf(w), part = (w) => [ix(w), ix(w) + w.length];
+  const box = el(S, "div", "abs", `left:30px;top:${540 - 40}px;width:520px;height:80px;outline:2px dashed rgba(23,21,26,.55);opacity:0`);
+  [[0, 0], [50, 0], [100, 0], [0, 100], [50, 100], [100, 100], [0, 50], [100, 50]].forEach(([px, py]) => el(box, "div", "hdl", `left:calc(${px}% - 6px);top:calc(${py}% - 6px)`));
+  tl.fromTo(box, { opacity: 0, scale: 1.25 }, { opacity: 1, scale: 1, duration: .08 }, .75);
+  tl.to(box, { width: 410, duration: .01 }, .75); tl.set(box, { opacity: 0 }, 1.125);
+  type(L, .667, .75, 0, 16, { cursor: false });
+  tl.fromTo(L.d, { filter: "blur(5px)" }, { filter: "blur(0px)", duration: .08 }, .667);
+  type(L, .875, 1.04, 16, 23, { fresh: GREY, settle: INK });
+  tl.to(box, { width: 560, duration: .16, ease: "none" }, .875);
+  const s = svg(S, W, H);
+  pen(s, scribble(3, 170, 640, 330, 4, 34), INK, 3.2, .83, 1.1, { ease: "none", off: 1.13, offDur: .1 });
+  pen(s, "M560,430 C760,380 900,560 820,690 C760,780 600,700 680,600", INK, 3, 1.167, 1.27, { off: 1.29, offDur: .08 });
+  type(L, 1.2, 1.32, 23, 28, { fresh: GREY, settle: INK });
+  pen(s, "M640,700 L700,500", INK, 3, 1.333, 1.36, { hide: 1.42 });
+  type(L, 1.36, 1.46, 28, 34, { fresh: GREY, settle: INK });
+  pen(s, "M600,546 C585,515 690,505 735,520 C770,535 735,566 660,566 C610,566 596,548 612,534", INK, 3, 1.42, 1.5, { hide: 1.58 });
+  pen(s, "M40,585 C200,575 420,590 700,580", INK, 3, 1.5, 1.56, { off: 1.6, offDur: .06 });
+  type(L, 1.58, 1.7, 34, 40, { fresh: GREY, settle: INK, settleAfter: .17 });
+  type(L, 1.75, 1.82, 40, 43, { fresh: GREY, settle: INK });
+  type(L, 1.84, 2.04, 43, 54, { fresh: GREY, settle: INK });
+  type(L, 2.08, 2.1, 54, 55, {});
+  tl.set(L.cur, { opacity: 0 }, 2.083);
+  const [a0, a1] = part("agents");
+  tl.to(L.chars.filter((_, i) => i < a0 || i >= a1), { color: "#3A3540", duration: .3, ease: "none" }, 3.4);
+  tl.set(L.chars.slice(a0, a1), { color: WHITE, backgroundColor: "#17151A", boxShadow: "0 0 0 4px #17151A" }, 3.5);
+  tl.to(L.chars.filter((_, i) => i < a0 || i >= a1), { color: "#1E1A20", duration: .1 }, 3.79);
+}
+{ /* f49: red flash */
+  const c = clip(2.0, 2.083, "", 10); c.style.background = RED;
+  const s = svg(c, W, H); const R = rng(9); let d = "M760,540";
+  for (let i = 0; i <= 60; i++) { const x = 760 + i * 9, a = (i % 2 ? 1 : -1) * (40 + 260 * Math.sin(i / 60 * Math.PI) * (.4 + .6 * R())); d += ` L${x},${540 + a}`; }
+  sv(s, "path", { d: d + " Z", fill: "#F2C230", stroke: "#F2C230", "stroke-width": 6 });
+  sv(s, "path", { d: "M320,640 L380,500 L420,610 L470,470 L520,640 L560,520 L600,600", fill: "none", stroke: "#fff", "stroke-width": 4 });
+  sv(s, "path", { d: "M300,690 L420,600 L470,700 L560,580", fill: "none", stroke: "#fff", "stroke-width": 3 });
+  const w = el(c, "div", "abs", `left:1000px;top:330px;width:240px;height:420px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;font-size:120px;line-height:.62;color:#0E0C10;letter-spacing:-0.08em`, "BR<br>EA<br>K");
+  tl.fromTo(w, { rotationY: 70, scaleX: .5 }, { rotationY: -30, scaleX: .9, duration: .083, ease: "none" }, 2.0);
+}
+{ /* f51-93: icons drift in, the star (measured overshoot + hue drift), the spotlight (measured) */
+  const c = clip(2.083, 3.917, "", 5);
+  const R = rng(21);
+  for (let i = 0; i < 8; i++) { const y = 200 + R() * 700, ln = el(c, "div", "abs", `left:${200 + R() * 900}px;top:${y}px;width:${160 + R() * 220}px;height:5px;background:#55525C;border-radius:3px;filter:blur(2px);opacity:.7`);
+    gsap.set(ln, { rotation: -14 }); tl.fromTo(ln, { x: 300 }, { x: -500, duration: .125, ease: "none" }, 2.083); tl.set(ln, { opacity: 0 }, 2.21); }
+  [["bug", 1170, 330, 86, -12], ["chat", 1350, 320, 80, 8], ["lock", 1310, 650, 84, 6], ["server", 1400, 840, 78, -6]].forEach(([n, x, y, sz, r], i) => {
+    const ic = icon(c, n, x, y, sz, r);
+    tl.fromTo(ic, { x: 500 - i * 60, y: -200 + i * 140, rotation: r - 90, filter: "blur(6px)" }, { x: 0, y: 0, rotation: r, filter: "blur(0px)", duration: .17, ease: "power3.out" }, 2.083 + i * .02);
+    tl.to(ic, { x: -20 - i * 6, y: (i % 2 ? 12 : -12), rotation: r + (i % 2 ? 6 : -6), duration: 1.1, ease: "sine.inOut" }, 2.27);
+    tl.to(ic, { x: "+=120", y: "-=60", opacity: 0, duration: .1, ease: "power2.in" }, 3.33 + i * .02);
+  });
+  const vig = el(c, "div", "full", "z-index:2;background:radial-gradient(ellipse 40% 46% at 62% 50%, rgba(28,20,18,0) 0%, rgba(28,20,18,0) 55%, rgba(24,17,16,.97) 100%);opacity:0");
+  drive(vig, 2.083, 3.917, { opacity: curve([[F(51), 0], [F(54), .08], [F(57), .12], [F(60), .17], [F(63), .18], [F(66), .2], [F(69), .21], [F(72), .24], [F(75), .27], [F(78), .29], [F(81), .33], [F(84), .41], [F(87), .57], [F(90), .93], [F(93), 1]]),
+    scale: curve([[F(51), 1.7], [F(70), 1.35], [F(87), 1.08], [F(93), 1.0]]) });
+  const st = el(c, "div", "abs", "z-index:3;left:-840px;top:-210px;width:2300px;height:1500px;transform-origin:900px 750px;opacity:0");
+  layer(st, "star_cyan", 0, 0, 2300, 1500); const stB = layer(st, "star_blue", 0, 0, 2300, 1500, "opacity:0");
+  drive(stB, F(53), F(83), { opacity: curve([[F(53), 0], [F(61), .3], [F(69), .62], [F(77), .88], [F(83), 1]]) });
+  tl.set(st, { opacity: 1 }, F(53));
+  drive(st, F(53), 3.917, {
+    scale: curve([[F(53), .95], [F(55), 1.22], [F(57), 1.17], [F(59), 1.08], [F(61), 1.03], [F(63), 1.0], [F(67), .99], [F(71), .97], [F(75), .945], [F(79), .925], [F(91), .9]]),
+    scaleX: curve([[F(79), 1], [F(81), .42], [F(91), .38]]),
+    x: curve([[F(53), 21], [F(57), -10], [F(63), 4], [F(75), 0], [F(79), -24], [F(81), -27], [F(89), -18]]),
+    y: curve([[F(53), -17], [F(55), 3], [F(59), -33], [F(65), -27], [F(71), -16], [F(79), -3], [F(89), -1]]),
+    filter: t => `hue-rotate(${(t > 3.75 ? 55 * clamp((t - 3.75) / .1) : 0).toFixed(1)}deg) brightness(${t > 3.75 ? (1 - .25 * clamp((t - 3.75) / .1)).toFixed(2) : 1})`,
+  });
+  const ball = el(c, "div", "abs", "z-index:4;left:520px;top:140px;width:800px;height:800px;border-radius:50%;background:radial-gradient(circle, #FFB49A 0%, #E2361E 40%, rgba(160,20,20,0) 70%);opacity:0;filter:blur(4px)");
+  tl.fromTo(ball, { opacity: 0, scale: .3 }, { opacity: 1, scale: 1.1, duration: .083, ease: "power2.out" }, 3.75);
+  const dk = el(c, "div", "full", "z-index:4;background:#120F12;opacity:0"); tl.to(dk, { opacity: .85, duration: .083 }, 3.833);
+  tl.to(ball, { x: -420, scale: .7, duration: .083 }, 3.833);
+  const s = svg(c, W, H, "z-index:5"); pen(s, "M820,260 C980,180 1100,300 1000,330 C930,350 1120,420 1160,330", "#E5261C", 7, 3.75, 3.83);
+}
+
+/* ============================================================================================
+   S5  the agent's head in heat (3.917 - 6.583): measured rise, sway, blur-in, hue settle
+   ============================================================================================ */
+{
+  const c = clip(3.917, 6.583, "dark", 3);
+  const bg = el(c, "div", "full", "background:radial-gradient(ellipse 70% 80% at 10% 55%, #5C1A1E 0%, #2A1015 45%, rgba(18,16,20,0) 100%);opacity:0");
+  tl.to(bg, { opacity: 1, duration: .15 }, F(137));
+  const lite = el(c, "div", "full paper", "opacity:0");
+  drive(lite, F(139), F(153), { opacity: curve([[F(139), 0], [F(141), .32], [F(145), .55], [F(149), .85], [F(151), 1]]) });
+  const g = el(c, "div", "abs", "left:0;top:0;width:1440px;height:1080px;opacity:0");
+  const S5 = .74, HX = 1016 - 640 * S5, HY = 168;                      // head layer: 1340 x 1200, skull centre x=600..640
+  layer(g, "head_heat", HX, HY, 1340 * S5, 1200 * S5);
+  const cold = layer(g, "head_cold", HX, HY, 1340 * S5, 1200 * S5, "opacity:0");
+  tl.set(g, { opacity: 1 }, F(96));
+  drive(g, F(96), 6.583, {
+    x: curve([[F(96), 90], [F(97), 70], [F(100), -7], [F(103), -46], [F(106), -68], [F(109), -74], [F(112), -71], [F(115), -58], [F(118), -43], [F(121), -28], [F(124), -15], [F(127), -9], [F(130), -5], [F(133), -3], [F(136), 0], [F(142), 0], [F(145), 8], [F(153), 14]]),
+    y: curve([[F(96), 150], [F(97), 126], [F(103), 69], [F(106), 25], [F(109), 18], [F(112), 15], [F(115), 5], [F(118), 0], [F(145), 0], [F(149), 14], [F(153), 21]]),
+    filter: t => { const b = curve([[F(96), 30], [F(97), 24], [F(100), 14], [F(103), 8], [F(106), 3.5], [F(112), 1.5], [F(118), 0], [F(140), 0], [F(142), 2.5], [F(147), 1.5], [F(151), 0]])(t);
+      const h = curve([[F(96), -120], [F(97), -115], [F(100), -60], [F(103), 0], [F(153), 0]])(t);
+      return `blur(${Math.max(0, b).toFixed(1)}px) hue-rotate(${h.toFixed(0)}deg) saturate(1) brightness(1)`; },
+  });
+  drive(cold, F(141), F(152), { opacity: curve([[F(141), 0], [F(145), .45], [F(149), .9], [F(152), 1]]) });
+  const s = svg(c, W, H);
+  const orb = sv(s, "ellipse", { cx: 1010, cy: 330, rx: 210, ry: 70, fill: "none", stroke: "#F2B33D", "stroke-width": 9, opacity: 0, style: "filter:blur(2px)" });
+  tl.set(orb, { opacity: 1 }, 3.958); tl.fromTo(orb, { rotation: -30, transformOrigin: "1010px 330px" }, { rotation: 25, duration: .35, ease: "none" }, 3.958);
+  tl.to(orb, { opacity: 0, duration: .1 }, 4.25);
+  const dot = el(c, "div", "abs", "left:990px;top:330px;width:16px;height:16px;border-radius:50%;background:#FFE7A0;box-shadow:0 0 18px 6px #FFB24A");
+  drive(dot, 3.958, 4.6, { x: t => 160 * Math.cos(t * 9), y: t => 50 * Math.sin(t * 9), opacity: t => clamp(1 - (t - 4.35) / .25) });
+  pen(s, "M780,520 C860,330 1240,370 1170,470 C1110,560 880,500 940,420", "#fff", 3, F(106), F(109), { off: F(110), offDur: .06 });
+  pen(s, "M900,270 C1120,360 1300,520 1150,580 C1040,620 980,520 1060,480", "#fff", 3, F(116), F(119), { off: F(120), offDur: .08 });
+  const A = line(c, "not in a demo.", 160, 540, 34, WHITE);
+  type(A, F(95), F(98), 0, A.chars.length, { block: true, slide: 26, slideDur: .4 }); tl.set(A.cur, { opacity: 0 }, F(128));
+  untype(A, F(128), F(129), 0, A.chars.length);
+  const B = line(c, "you give them real work.", 160, 540, 34, WHITE);
+  type(B, F(129), F(131), 0, 3, { cursor: false }); type(B, F(131), F(134), 3, 8, { cursor: false });
+  type(B, F(137), F(140), 8, 13, { cursor: false }); type(B, F(143), F(147), 13, 24, { cursor: false });
+  tl.to(B.d, { color: "#2E2B31", duration: .25 }, F(145));
+  tl.to(B.d, { opacity: 0, duration: .05 }, F(152));
+}
+{ /* f153-158: white flare, dark with an ember, a pixel burst */
+  const c = clip(6.333, 6.583, "", 6);
+  const a = el(c, "div", "full", "background:radial-gradient(ellipse 90% 90% at 20% 10%, #FFFFFF 0%, #D8D6DB 40%, #3B383E 100%)");
+  tl.set(a, { opacity: 0 }, 6.417);
+  const b = el(c, "div", "full", "background:#0F0D10;opacity:0"); tl.set(b, { opacity: 1 }, 6.417); tl.set(b, { opacity: 0 }, 6.5);
+  const em = el(b, "div", "abs", "left:540px;top:860px;width:360px;height:110px;border-radius:50%;background:radial-gradient(ellipse, #FFE2B0 0%, #FF7A1E 45%, rgba(200,40,10,0) 75%);filter:blur(4px)");
+  tl.fromTo(em, { scale: .5 }, { scale: 1.1, duration: .083 }, 6.417);
+  const p = el(c, "div", "full", "background:#6A6670;opacity:0"); tl.set(p, { opacity: 1 }, 6.5);
+  const R = rng(4); for (let i = 0; i < 26; i++) { const sz = 30 + Math.floor(R() * 4) * 30; el(p, "div", "abs", `left:${470 + Math.floor(R() * 16) * 30}px;top:${330 + Math.floor(R() * 12) * 30}px;width:${sz}px;height:${sz}px;background:${["#D9551E", "#F28A3A", "#B8361A", "#FFC27A"][i % 4]}`); }
+}
+
+/* ============================================================================================
+   the wreath of icons (used twice): overlapping, like a ring of stickers
+   ============================================================================================ */
+const RING = ["robot", "term", "lens", "chat", "branch", "db", "shield", "bug", "lock", "warn", "server", "chip"];
+function ring(parent, base = 220) {
+  const g = el(parent, "div", "abs", "left:0;top:0;width:1440px;height:1080px;transform-origin:720px 560px");
+  const R = rng(17);
+  const items = RING.map((n, i) => {
+    const a = -Math.PI / 2 + i / RING.length * 2 * Math.PI, x = 720 + Math.cos(a) * 345, y = 560 + Math.sin(a) * 285;
+    const sz = base * (.86 + R() * .32), rot = (R() - .5) * 50;
+    return { n, a, x, y, rot, el: icon(g, n, x, y, sz, rot) };
+  });
+  return { g, items };
+}
+function hitFlash(c, it, t, seed) {
+  const H0 = "sepia(0) saturate(1) hue-rotate(0deg) brightness(1) drop-shadow(0px 0px 0px rgba(255,160,40,0))";
+  tl.fromTo(it.el, { filter: H0 }, { filter: "sepia(1) saturate(6) hue-rotate(-18deg) brightness(1.3) drop-shadow(0px 0px 26px rgba(255,160,40,1))", duration: .042 }, t);
+  tl.to(it.el, { filter: H0, duration: .25, ease: "power1.in" }, t + .125);
+  const s = svg(c, W, H); const R = rng(seed);
+  for (let i = 0; i < 8; i++) { const a = R() * 6.28, r0 = 50, r1 = 110 + R() * 80;
+    const p = sv(s, "line", { x1: it.x + Math.cos(a) * r0, y1: it.y + Math.sin(a) * r0, x2: it.x + Math.cos(a) * r1, y2: it.y + Math.sin(a) * r1, stroke: "#FFC23A", "stroke-width": 5, "stroke-linecap": "round", opacity: 0 });
+    tl.set(p, { opacity: 1 }, t); tl.set(p, { opacity: 0 }, t + .125); }
+}
+function meteor(c, seed, from, to, t0, t1) {
+  const b = ink(c, seed, 0, 0, 70); const tail = el(c, "div", "abs", "left:0;top:-9px;width:190px;height:18px;border-radius:9px;background:linear-gradient(90deg, rgba(14,12,16,0), rgba(14,12,16,.8));filter:blur(2.5px);transform-origin:190px 9px;opacity:0");
+  const mx = (from[0] + to[0]) / 2 + 160, my = Math.min(from[1], to[1]) - 120;
+  const P = u => [(1 - u) * (1 - u) * from[0] + 2 * (1 - u) * u * mx + u * u * to[0], (1 - u) * (1 - u) * from[1] + 2 * (1 - u) * u * my + u * u * to[1]];
+  const U = t => eIn((t - t0) / (t1 - t0));
+  drive(b, t0, t1, { x: t => P(U(t))[0], y: t => P(U(t))[1], rotation: t => 400 * U(t) });
+  drive(tail, t0, t1, { x: t => P(U(t))[0] - 190, y: t => P(U(t))[1],
+    rotation: t => { const u = U(t), p = P(u), q = P(Math.max(0, u - .05)); return Math.atan2(p[1] - q[1], p[0] - q[0]) * 57.3; }, opacity: () => 1 });
+  tl.set([b, tail], { opacity: 0 }, t1 + .01);
+}
+
+/* ============================================================================================
+   S6  wreath lands (measured overshoot), spins on a measured speed ramp, ink hits it, it rushes the lens
+   ============================================================================================ */
+{
+  const c = clip(6.583, 8.333, "paper", 3);
+  const r = ring(c);
+  const rot1 = integrate(159, 200, [[159, 9], [162, 7], [164, 5.3], [166, 6.0], [168, 4.1], [170, 3.1], [172, 2.0], [174, 1.65], [176, 1.2], [178, .92], [180, .83], [182, .57], [184, .55], [186, 1.03], [188, 1.32], [190, 2.2], [192, 2.3], [194, 3.1], [196, 4.5], [199, 7]]);
+  drive(r.g, 6.583, 8.333, {
+    rotation: t => rot1(t) - 40,
+    scale: curve([[F(159), 1.043], [F(161), 1.109], [F(163), 1.105], [F(165), 1.065], [F(167), 1.03], [F(169), 1.009], [F(171), 1.0], [F(181), .985], [F(191), .968], [F(195), .955], [F(197), .96], [F(199), 1.9], [F(201), 2.6]]),
+    x: curve([[F(159), 0], [F(171), -25], [F(191), -46], [F(197), -33], [F(199), 100], [F(201), 160]]),
+    y: curve([[F(159), 60], [F(165), 31], [F(171), 31], [F(181), 13], [F(191), 15], [F(195), 4], [F(197), -15], [F(199), -20]]),
+    filter: t => `blur(${(t < F(161) ? 10 * (1 - (t - F(159)) / (F(161) - F(159))) : t > F(197) ? 9 * clamp((t - F(197)) / .1) : 0).toFixed(1)}px)`,
+  });
+  r.items.forEach((it, i) => drive(it.el, 6.65, 8.333, { y: t => 7 * Math.sin(t * 3.1 + i), rotation: t => it.rot + 4 * Math.sin(t * 2.3 + i * 1.7) }));
+  meteor(c, 1, [700, -80], [r.items[3].x, r.items[3].y], F(169), F(173)); hitFlash(c, r.items[3], F(173), 1);
+  meteor(c, 2, [820, -60], [r.items[6].x, r.items[6].y], F(175), F(179)); hitFlash(c, r.items[6], F(179), 2);
+  meteor(c, 3, [-80, 860], [r.items[9].x, r.items[9].y], F(184), F(189)); hitFlash(c, r.items[9], F(189), 3);
+  [[700, 520, 34, F(178)], [760, 600, 44, F(189)], [650, 470, 26, F(193)]].forEach(([x, y, sz, t], i) => {
+    const b = ink(c, 3 + i, x, y, sz); tl.fromTo(b, { scale: 0 }, { scale: 1, duration: .1 }, t); tl.to(b, { x: 30 - i * 20, y: -20, duration: .4, ease: "sine.inOut" }, t + .1); });
+}
+
+/* ============================================================================================
+   S7  word beats on black, speed-ramped conveyors on paper (8.333 - 11.917)
+   ============================================================================================ */
+function wordBeat(t0, t1, name, word, o) {
+  const c = clip(t0, t1, "dark", 4);
+  const g = el(c, "div", "abs", "left:0;top:0;width:1440px;height:1080px");
+  if (o.deco) o.deco(c, g);
+  const size = o.size || 470, ic = icon(g, name, o.x || 520, 520, size, -13);
+  drive(ic, t0, t1, o.move);
+  sparks(c, 560, 520, 6, "#fff", t0 + .042, Math.round(t0 * 10));
+  const Lw = line(c, word, 960, 540, 62, WHITE);
+  type(Lw, t0, t0 + 2 / FPS, 0, Lw.chars.length, { block: true, slide: 47, slideDur: .45 });
+  const R = rng(Math.round(t0 * 7));
+  for (let i = 0; i < 7; i++) { const d = el(c, "div", "abs", `left:${200 + R() * 1100}px;top:${120 + R() * 840}px;width:${4 + R() * 8}px;height:${4 + R() * 8}px;background:${i % 3 ? "#fff" : RED};border-radius:${i % 2 ? 0 : 50}%;opacity:.8`);
+    tl.to(d, { y: -30 - R() * 60, x: (R() - .5) * 40, duration: t1 - t0, ease: "none" }, t0); }
+  return { c, g, ic, Lw };
+}
+function conveyor(t0, f0, f1, names, speed, seed) {
+  const c = clip(t0, F(f1 + 1), "paper", 4);
+  const row = el(c, "div", "abs", "left:0;top:0;width:6000px;height:1080px");
+  const R = rng(seed);
+  names.forEach((n, i) => icon(row, n, 300 + i * 255, 540 + (i % 2 ? 22 : -14), 290 + (i % 3) * 26, (R() - .5) * 34));
+  const pos = integrate(f0, f1 + 1, speed);
+  const mid = (names.length - 1) * 255 / 2 + 300;                        // the row is centred at the slowest frame
+  const minF = speed.reduce((a, b) => Math.abs(b[1]) < Math.abs(a[1]) ? b : a)[0];
+  const off = 720 - mid - pos(F(minF));
+  drive(row, t0, F(f1 + 1), { x: t => off + pos(t) });
+  for (let i = 0; i < 6; i++) { const ln = el(c, "div", "abs", `left:${R() * 1300}px;top:${250 + R() * 600}px;width:${80 + R() * 220}px;height:${3 + R() * 2}px;background:${RED};opacity:.85`);
+    drive(ln, t0, F(f1 + 1), { x: t => 1.4 * (pos(t) - pos(F(minF))) }); }
+}
+wordBeat(F(201), F(221), "term", "evidence.", {
+  move: { x: curve([[F(201), 120], [F(202), 124], [F(203), 44], [F(205), 21], [F(207), 8], [F(209), 0], [F(215), -20], [F(216), -20], [F(219), -5]]),
+          y: curve([[F(201), 0], [F(209), -2], [F(215), 0], [F(216), 20], [F(219), -10]]),
+          scale: curve([[F(201), .74], [F(202), .95], [F(203), 1.0], [F(209), 1.0]]),
+          scaleY: t => t < F(216) ? 1 : curve([[F(216), .23], [F(218), .28], [F(219), .42]])(t),
+          rotation: t => t < F(216) ? curve([[F(201), -30], [F(203), -14], [F(215), -11]])(t) : curve([[F(216), -18], [F(219), -27]])(t),
+          filter: t => `blur(${curve([[F(201), 10], [F(204), 6], [F(207), 3], [F(210), 0]])(t).toFixed(1)}px)` },
+  deco: (c, g) => {
+    const st = layer(g, "star_red", 330, 120, 560, 560, "transform-origin:280px 280px");
+    drive(st, F(201), F(221), {
+      scale: curve([[F(201), 1.5], [F(202), .9], [F(203), .5], [F(209), .52], [F(210), 1.05], [F(211), 1.15], [F(215), 1.12], [F(216), 1.5], [F(219), 1.7]]),
+      scaleX: t => t < F(216) ? 1 : 2.1, rotation: t => t < F(216) ? 14 + 2 * Math.sin(t * 5) : -12,
+      x: t => t < F(210) ? 120 : t < F(216) ? 20 : 180, y: t => t < F(210) ? -40 : t < F(216) ? 0 : 140,
+      opacity: curve([[F(201), .45], [F(202), .8], [F(203), 1]]),
+      filter: t => `blur(${(t < F(203) ? 8 : 0)}px)`,
+    });
+  },
+});
+conveyor(F(221), 221, 237, ["db", "branch", "chat", "robot", "shield", "bug", "lock", "chip", "server", "warn", "lens", "report"],
+  [[221, -300], [223, -160], [225, -70], [228, -22], [230, -12], [232, -24], [234, -70], [236, -200], [237, -360]], 3);
+wordBeat(F(239), F(255), "shield", "guardrails.", {
+  x: 470,
+  move: { x: curve([[F(239), -60], [F(241), -10], [F(247), 0], [F(253), 6]]), y: curve([[F(239), 40], [F(241), 8], [F(253), 0]]),
+          rotation: curve([[F(239), -40], [F(241), -20], [F(253), -16]]), scale: curve([[F(239), .7], [F(241), .97], [F(243), 1]]),
+          filter: t => `blur(${curve([[F(239), 12], [F(241), 4], [F(244), 0]])(t).toFixed(1)}px)` },
+  deco: (c) => {
+    const s = svg(c, W, H);
+    const lo = sv(s, "path", { d: "M-40,1000 L360,650 L420,710 L-20,1080 Z", fill: RED });
+    const hi = sv(s, "path", { d: "M560,420 L1440,40 L1440,200 L600,500 Z", fill: RED });
+    tl.fromTo(lo, { opacity: 0, scale: .4, transformOrigin: "380px 680px" }, { opacity: 1, scale: 1, duration: .08, ease: "power3.out" }, F(239));
+    tl.fromTo(hi, { scaleX: .05, scaleY: .3, transformOrigin: "580px 460px" }, { scaleX: .22, scaleY: .7, duration: .1, ease: "power3.out" }, F(245));
+    tl.to(hi, { scaleX: 1, scaleY: 1, duration: .1, ease: "power3.out" }, F(249));
+    tl.to([lo, hi], { scale: 1.08, duration: .2, ease: "none" }, F(251));
+  },
+});
+conveyor(F(255), 255, 265, ["warn", "lens", "term", "robot", "flame", "db", "chat", "branch", "shield", "report"],
+  [[255, -420], [256, -283], [257, -132], [258, -62], [259, -25], [260, -12], [261, -25], [262, -66], [263, -132], [264, -285], [265, -351]], 8);
+wordBeat(F(267), F(287), "chip", "memory.", {
+  x: 430, size: 330,
+  move: { x: curve([[F(267), 186], [F(269), 64], [F(271), 15], [F(273), 6], [F(275), 0], [F(285), -6]]), y: t => 6 * Math.sin(t * 4),
+          rotation: curve([[F(267), -23], [F(269), -3], [F(271), -11], [F(273), -14], [F(275), -11], [F(285), -9]]),
+          filter: t => `blur(${curve([[F(267), 6], [F(269), 2], [F(271), 0]])(t).toFixed(1)}px)` },
+  deco: (c) => {
+    const R = rng(5);
+    [[640, 300, 80, F(277)], [700, 760, 62, F(268)], [380, 820, 56, F(279)], [880, 380, 50, F(281)]].forEach(([x, y, s, t], i) => {
+      const p = el(c, "div", "abs", `left:${x}px;top:${y}px;width:${s}px;height:${s}px`, `<svg viewBox="0 0 5 5" shape-rendering="crispEdges" width="${s}" height="${s}"><path d="M2,0h1v2h2v1h-2v2h-1v-2h-2v-1h2z" fill="${RED}"/></svg>`);
+      tl.fromTo(p, { scale: 0, rotation: -40 }, { scale: 1, rotation: (R() - .5) * 30, duration: .12, ease: "back.out(2)" }, t);
+      tl.to(p, { y: -40, duration: .7, ease: "sine.inOut" }, t + .1);
+    });
+    const s = svg(c, W, H); pen(s, "M820,260 C900,200 960,240 930,290", "#fff", 3, F(277), F(279), { off: F(280), offDur: .06 });
+  },
+});
+
+/* ============================================================================================
+   S8  the wreath returns on a measured spin, spins up, breaks; ink takes the pieces (11.917 - 13.833)
+   ============================================================================================ */
+{
+  const c = clip(F(287), F(333), "paper", 3);
+  const r = ring(c, 210);
+  const rot2 = integrate(287, 302, [[287, 30], [289, 24], [290, 16], [291, 9.8], [292, 6.0], [293, 3.06], [294, 1.42], [295, .92], [296, 1.41], [297, 3.23], [298, 6.27], [299, 10.8], [300, 18.2], [301, 40.8]]);
+  drive(r.g, F(287), F(301), { rotation: t => rot2(t) - 160, scale: curve([[F(287), .9], [F(290), 1.04], [F(292), 1.0], [F(301), .98]]),
+    filter: t => `blur(${(t < F(291) ? 8 * (1 - (t - F(287)) / (F(291) - F(287))) : t > F(298) ? 5 * clamp((t - F(298)) / .12) : 0).toFixed(1)}px)` });
+  const R = rng(77);
+  const spots = [[332, 257], [520, 180], [809, 262], [1150, 240], [1240, 470], [1185, 887], [880, 870], [442, 898], [250, 760], [200, 470], [700, 420], [960, 560]];
+  /* at the break the wreath hands its pieces to the page: positions are re-based so nothing jumps */
+  tl.set(r.g, { rotation: 0, scale: 1, filter: "blur(0px)" }, F(301));
+  const ang = rot2(F(301)) - 160, sc = .98;
+  r.items.forEach((it, i) => {
+    const dx = it.x - 720, dy = it.y - 560, a = ang * Math.PI / 180;
+    const px = 720 + sc * (dx * Math.cos(a) - dy * Math.sin(a)), py = 560 + sc * (dx * Math.sin(a) + dy * Math.cos(a));
+    tl.set(it.el, { x: px - it.x, y: py - it.y, rotation: it.rot + ang }, F(301));
+    const [tx, ty] = spots[i];
+    tl.to(it.el, { x: tx - it.x, y: ty - it.y, scale: .42, rotation: it.rot + ang + (R() - .5) * 220, duration: .18, ease: "power3.out" }, F(301) + R() * .04);
+    tl.to(it.el, { x: `+=${(R() - .5) * 40}`, y: `+=${(R() - .5) * 30}`, rotation: `+=${(R() - .5) * 20}`, duration: 1.1, ease: "sine.inOut" }, F(306));
+  });
+  const fails = [[3, F(305), "1M-token context"], [7, F(311), "dead connection"], [10, F(317), "disk full"], [5, F(323), "a claim it shouldn't make"]];
+  fails.forEach(([k, t, txt], i) => {
+    const [x, y] = spots[k];
+    const b = ink(c, 2 + i, x + 30, y + 10, 150 - i * 12); tl.fromTo(b, { scale: 0, rotation: -30 }, { scale: 1, rotation: 0, duration: .16, ease: "power2.out" }, t - .06);
+    tl.set(r.items[k].el, { filter: "brightness(0)" }, t);
+    const n = line(c, txt, x - 40, y + 95, 24, INK); type(n, t + .02, t + .2, 0, n.chars.length, { cursor: false });
+  });
+  const s = svg(c, W, H);
+  pen(s, scribble(91, 120, 320, 260, 3, 46, 1.4), INK, 5, F(307), F(310), { off: F(312), offDur: .1 });
+  pen(s, "M330,1000 C420,860 520,980 640,860", INK, 14, F(313), F(315), { hide: F(323) });
+  pen(s, scribble(92, 1060, 420, 260, 2, 60, 1.6), INK, 6, F(319), F(322), { off: F(323), offDur: .1 });
+  pen(s, scribble(93, 820, 300, 420, 3, 80, 1.5), INK, 4, F(328), F(332));
+  const v = el(c, "div", "full", "background:radial-gradient(ellipse 55% 55% at 50% 50%, rgba(0,0,0,0) 40%, rgba(10,8,10,.92) 100%);opacity:0");
+  tl.to(v, { opacity: 1, duration: .2, ease: "power1.in" }, F(327));
+}
+
+/* ============================================================================================
+   S9  the palm in heat (13.833 - 15.917): measured rise, slide, blur-in and hue settle
+   ============================================================================================ */
+{
+  const c = clip(F(333), F(383), "dark", 3);
+  const warm = el(c, "div", "full", "background:radial-gradient(ellipse 70% 80% at 30% 50%, #4A1418 0%, #24101A 50%, rgba(18,16,20,0) 100%);opacity:0");
+  tl.to(warm, { opacity: 1, duration: .1 }, F(375));
+  const mauve = el(c, "div", "full", "background:radial-gradient(ellipse 80% 80% at 50% 50%, #6B5C63 0%, #4A3E46 70%, #2C252B 100%);opacity:0");
+  tl.to(mauve, { opacity: 1, duration: .1 }, F(379));
+  const SP = .66, g = el(c, "div", "abs", "left:0;top:0;width:1440px;height:1080px");
+  layer(g, "palm_heat", 731 - 560 * SP, 340, 1100 * SP, 1300 * SP);
+  drive(g, F(333), F(383), {
+    x: curve([[F(333), -230], [F(334), -168], [F(337), -98], [F(340), -73], [F(343), -15], [F(346), -3], [F(349), 7], [F(352), 6], [F(355), 1], [F(358), -2], [F(373), 0], [F(376), 10], [F(379), 67], [F(382), 130]]),
+    y: curve([[F(333), 170], [F(334), 123], [F(337), 70], [F(340), 55], [F(343), 29], [F(346), 21], [F(349), 20], [F(352), 16], [F(355), 9], [F(358), 0], [F(373), 2], [F(376), 5], [F(379), 18], [F(382), 40]]),
+    rotation: curve([[F(333), -22], [F(340), -10], [F(346), -5], [F(358), -4], [F(373), -3], [F(379), 8], [F(382), 14]]),
+    filter: t => { const b = curve([[F(333), 26], [F(334), 20], [F(337), 12], [F(340), 5], [F(343), 1.5], [F(346), .5], [F(349), 1], [F(352), 0], [F(375), 0], [F(379), 2.5], [F(382), 4]])(t);
+      const h = curve([[F(333), -70], [F(334), -50], [F(337), -35], [F(340), -6], [F(343), 0], [F(382), 0]])(t);
+      return `blur(${Math.max(0, b).toFixed(1)}px) hue-rotate(${h.toFixed(0)}deg) saturate(${t > F(377) ? .7 : 1}) brightness(1)`; },
+  });
+  const s = svg(c, W, H);
+  pen(s, "M520,700 C380,560 520,300 700,330 C880,360 860,600 700,620 C560,640 600,420 740,450", "#fff", 3, F(333), F(337), { off: F(338), offDur: .08 });
+  pen(s, "M600,220 C760,260 820,180 760,140", "#fff", 2.5, F(339), F(341), { off: F(342), offDur: .05 });
+  const R = rng(14); for (let i = 0; i < 9; i++) { const d = el(c, "div", "abs", `left:${560 + R() * 380}px;top:${170 + R() * 200}px;width:${3 + R() * 4}px;height:${8 + R() * 10}px;background:#fff;border-radius:2px;opacity:.85`);
+    gsap.set(d, { rotation: (R() - .5) * 60 }); tl.to(d, { y: -60 - R() * 80, opacity: 0, duration: 1.2 + R() * .6, ease: "none" }, F(340) + R() * .5); }
+  const A = line(c, "know when to act,", 150, 540, 34, WHITE), B = line(c, "and when to stop.", 1000, 540, 34, WHITE);
+  type(A, F(333), F(339), 0, A.chars.length, { block: true }); tl.set(A.cur, { opacity: 0 }, F(342));
+  type(B, F(343), F(350), 0, B.chars.length, { block: true, slide: 20, slideDur: .4 }); blink(B, F(362), F(375), false);
+  tl.to([A.d, B.d], { color: "#B9AFB4", duration: .15 }, F(379));
+}
+
+/* ============================================================================================
+   S10  S · A · F · E (15.917 - 17.25): measured pops
+   ============================================================================================ */
+{
+  const WORD = "SAFE", XS = [125, 518, 920, 1308];
+  const beats = [
+    { f: 383, bg: "paper", col: INK, icon: "lock", glow: "rgba(10,8,10,.95)", gf: 389, pop: [[383, .32], [384, .9], [385, .98], [387, 1]], spin: [[383, -90], [385, -6]] },
+    { f: 391, bg: "dark", col: WHITE, icon: "robot", glow: "rgba(220,24,28,.9)", gf: 397, pop: [[391, .3], [393, .7], [394, 1.02], [396, 1]], spinY: [[391, 85], [394, 0]] },
+    { f: 399, bg: "red", col: "#9FDCFF", icon: "report", glow: "rgba(20,8,10,.85)", gf: 403, pop: [[399, .25], [401, .95], [403, 1]], spin: [[399, -160], [401, -20], [403, -12]] },
+    { f: 405, bg: "dark", col: WHITE, icon: "shield", glow: "rgba(240,238,242,.95)", gf: 412, pop: [[405, .24], [406, .46], [407, .74], [408, .92], [409, .98], [411, 1]], spin: [[405, 30], [409, 6]] },
+  ];
+  beats.forEach((b, i) => {
+    const t0 = F(b.f), t1 = i < 3 ? F(beats[i + 1].f) : F(415);
+    const c = clip(t0, t1, b.bg === "red" ? "" : b.bg, 4); if (b.bg === "red") c.style.background = RED;
+    const gl = el(c, "div", "abs", `left:420px;top:240px;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle, ${b.glow} 0%, rgba(0,0,0,0) 65%);opacity:0;filter:blur(6px)`);
+    tl.fromTo(gl, { opacity: 0, scale: .4 }, { opacity: 1, scale: 1.1, duration: t1 - F(b.gf), ease: "power2.out" }, F(b.gf));
+    const ic = icon(c, b.icon, 720, 540, 300, 0);
+    drive(ic, t0, t1, { scale: curve(b.pop.map(([f, v]) => [F(f), v])), rotation: b.spin ? curve(b.spin.map(([f, v]) => [F(f), v])) : () => 6,
+      rotationY: b.spinY ? curve(b.spinY.map(([f, v]) => [F(f), v])) : () => 0, y: t => -6 * (t - t0) / (t1 - t0) });
+    for (let k = 0; k <= i; k++) el(c, "div", "abs", `left:${XS[k] - 20}px;top:520px;width:40px;text-align:center;font-size:32px;font-weight:700;color:${b.col}`, WORD[k]);
+  });
+}
+
+/* ============================================================================================
+   S11  scattered letters (17.25 - 20.375): measured settle positions, drift, then they gather
+   ============================================================================================ */
+{
+  const c = clip(F(415), F(490), "paper", 3);
+  const s0 = svg(c, W, H, "filter:blur(9px)");
+  pen(s0, "M200,-50 L700,900 L1300,-20", INK, 46, F(415), F(417), { hide: F(417.3) });
+  pen(s0, scribble(51, 100, 500, 1300, 3, 220, 1.3), INK, 30, F(417), F(419), { hide: F(420) });
+  const R = rng(66);
+  const L4 = [["S", 332, 257, -90], ["A", 809, 262, 180], ["F", 442, 898, 90], ["E", 1185, 887, -60]];
+  const els = L4.map(([ch, x, y, r], i) => {
+    const e = el(c, "div", "abs", `left:${x - 14}px;top:${y - 20}px;font-size:40px;font-weight:700;color:#2A2128;line-height:1`, ch);
+    tl.fromTo(e, { x: (R() - .5) * 1000, y: (R() - .5) * 800, rotation: r - 260, scale: 2.6, filter: "blur(6px)" }, { x: 0, y: 0, rotation: r * .6, scale: 1, filter: "blur(0px)", duration: .7, ease: "expo.out" }, F(419) + i * .04);
+    drive(e, F(437), F(477), { rotation: t => r * .6 * (1 - eIO((t - F(437)) / 1.4)) + 5 * Math.sin(t * 1.4 + i), x: t => 9 * Math.sin(t * .9 + i * 2), y: t => 7 * Math.cos(t * 1.1 + i) });
+    return e;
+  });
+  [[1220, 320], [716, 302], [380, 573], [1126, 375], [222, 696], [860, 760]].forEach(([x, y], i) => { const d = el(c, "div", "abs", `left:${x}px;top:${y}px;width:8px;height:8px;border-radius:50%;background:#2A2128`);
+    tl.fromTo(d, { x: (R() - .5) * 600, y: (R() - .5) * 500 }, { x: 0, y: 0, duration: .6, ease: "expo.out" }, F(421)); drive(d, F(437), F(485), { x: t => 14 * Math.sin(t + i), y: t => 10 * Math.cos(t * 1.3 + i) }); });
+  const s = svg(c, W, H);
+  [[F(467), 332, 257], [F(471), 809, 262], [F(475), 442, 898], [F(479), 1185, 887], [F(482), 720, 560], [F(484), 380, 573]].forEach(([t, x, y], i) =>
+    pen(s, `M${x - 30},${y + 50} C${x - 80},${y - 40} ${x + 70},${y - 50} ${x + 50},${y + 30} C${x + 30},${y + 80} ${x - 60},${y + 60} ${x - 10},${y - 10} L${x + 120 - i * 40},${y - 140 + i * 30}`, RED, 2.2, t, t + .14, { off: t + .3, offDur: .12 }));
+  els.forEach((e, i) => { const [, x, y] = L4[i]; tl.to(e, { x: (720 - x) * .62, y: (560 - y) * .62, rotation: 0, scale: 1.7, duration: F(487) - F(477), ease: "power3.in" }, F(477)); });
+  pen(s, scribble(70, 600, 540, 240, 6, 90, 1.7), "#0E0C10", 14, F(486), F(489.5));
+}
+
+/* ============================================================================================
+   S12  the event (20.375 - 23.6)
+   ============================================================================================ */
+{
+  const c = clip(F(490), T, "paper", 3);
+  const g = el(c, "div", "abs", "left:0;top:0;width:1440px;height:1080px;transform-origin:720px 540px");
+  drive(g, F(490), T, { scale: t => 1 + .025 * (t - F(490)) / 3.2 });
+  const blot = ink(g, 0, 720, 540, 260); tl.fromTo(blot, { scale: 1.2 }, { scale: 0, duration: .14, ease: "power3.in" }, F(490));
+  const ic = icon(g, "robot", 720, 290, 190, -6);
+  tl.fromTo(ic, { scale: 0, rotation: -120 }, { scale: 1, rotation: -6, duration: .22, ease: "back.out(2.2)" }, 20.45);
+  tl.to(ic, { y: -8, rotation: 3, duration: 1.2, ease: "sine.inOut", yoyo: true, repeat: 1 }, 20.7);
+  sparks(g, 720, 290, 5, RED, 20.6, 123, 90);
+  const lab = line(g, "ai in action  ·  live", 720, 420, 30, "#76727C", "transform:translate(-50%,-50%);font-weight:600");
+  type(lab, 20.55, 20.8, 0, lab.chars.length, { cursor: false });
+  const t1 = line(g, "how to build multi agent systems", 720, 520, 62, INK, "transform:translate(-50%,-50%);font-weight:800;letter-spacing:-0.045em");
+  type(t1, 20.8, 21.45, 0, t1.chars.length, { block: true }); tl.set(t1.cur, { opacity: 0 }, 21.48);
+  const row = el(g, "div", "abs", `left:0;top:${600 - 31}px;width:1440px;display:flex;justify-content:center;align-items:center;height:62px`);
+  const t2 = line(row, "that", 0, 0, 62, INK, "position:relative;transform:none;font-weight:800;letter-spacing:-0.045em"); t2.cur.style.display = "none";
+  const mid = el(row, "span", "", `position:relative;margin-left:.24em;font-size:62px;font-weight:800;letter-spacing:-0.045em;color:${INK};white-space:pre;line-height:1`);
+  const midL = [..."don't break"].map(ch => el(mid, "span", "", "display:none", ch === " " ? " " : ch));
+  const tail = line(row, " in production", 0, 0, 62, INK, "position:relative;transform:none;font-weight:800;letter-spacing:-0.045em");
+  type(t2, 21.48, 21.6, 0, 4, { cursor: false });
+  midL.forEach((ch, i) => tl.set(ch, { display: "inline" }, 21.6 + i * .025));
+  type(tail, 21.88, 22.2, 0, tail.chars.length, { block: true });
+  blink(tail, 22.3, T);
+  const us = el(mid, "div", "abs", "left:-6px;top:58px;width:calc(100% + 12px);height:30px", `<svg width="100%" height="30" viewBox="0 0 100 30" preserveAspectRatio="none"><path d="M2,14 C30,8 60,20 98,10 M8,22 C40,18 70,24 94,18" fill="none" stroke="${RED}" stroke-width="2.4" vector-effect="non-scaling-stroke" stroke-linecap="round"/></svg>`);
+  const up = us.querySelector("path"); up.style.strokeDasharray = "400"; tl.fromTo(up, { strokeDashoffset: 400 }, { strokeDashoffset: 0, duration: .3, ease: "power2.out" }, 22.3);
+  const d = line(g, "8 oct  ·  by the flytbase team", 720, 700, 30, "#4A4650", "transform:translate(-50%,-50%);font-weight:600");
+  type(d, 22.5, 22.95, 0, d.chars.length, { cursor: false });
+  [[230, 210], [1180, 240], [300, 860], [1150, 880], [520, 960]].forEach(([x, y], i) => { const p = el(g, "div", "abs", `left:${x}px;top:${y}px;width:22px;height:22px`, `<svg viewBox="0 0 5 5" shape-rendering="crispEdges" width="22" height="22"><path d="M2,0h1v2h2v1h-2v2h-1v-2h-2v-1h2z" fill="${RED}"/></svg>`);
+    tl.fromTo(p, { scale: 0 }, { scale: 1, duration: .12, ease: "back.out(2)" }, 21.0 + i * .25); tl.to(p, { y: -24, rotation: 20, duration: 2, ease: "sine.inOut" }, 21.1 + i * .25); });
+}
+
+/* ============================================================================================
+   grain over everything
+   ============================================================================================ */
+{
+  const c = clip(0, T, "", 50);
+  el(c, "div", "full", "mix-blend-mode:overlay;opacity:.22",
+    `<svg width="${W}" height="${H}"><filter id="gr"><feTurbulence id="turb" type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="1"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#gr)"/></svg>`);
+  const turb = c.querySelector("#turb");
+  for (let f = 0; f < Math.round(T * FPS); f++) tl.set(turb, { attr: { seed: 1 + (f * 37) % 997 } }, f / FPS);
+}
+
+tl.set({}, {}, T);
+window.__timelines["main"] = tl;
+</script>
+</body>
+</html>

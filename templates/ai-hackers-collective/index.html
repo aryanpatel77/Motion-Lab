@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1440, height=1080" />
+<title>AI Hackers Collective: still that kid</title>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+@font-face { font-family: "Inter"; src: url(assets/fonts/Inter.woff2) format("woff2"); font-weight: 100 900; }
+/* condensed caption face: the system's Helvetica Neue Condensed Bold (macOS), not shipped; Impact otherwise */
+@font-face { font-family: "Cap"; src: local("HelveticaNeue-CondensedBold"), local("Helvetica Neue Condensed Bold"), local("Impact"); }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 1440px; height: 1080px; overflow: hidden; background: #0B0B0B; }
+#root { position: relative; width: 1440px; height: 1080px; overflow: hidden; background: #0B0B0B; }
+.full { position: absolute; left: 0; top: 0; width: 1440px; height: 1080px; overflow: hidden; }
+.abs { position: absolute; }
+.ph { position: absolute; display: flex; align-items: center; white-space: nowrap; font-family: "Cap", "Inter", sans-serif; font-weight: 700;
+  letter-spacing: -0.035em; line-height: 1; transform: translateY(-50%); }
+.ph .w { opacity: 0; display: inline-block; }
+.slot { position: absolute; left: 34px; bottom: 30px; font: 600 20px/1.3 "Inter", sans-serif; color: rgba(255,255,255,.55); letter-spacing: .01em; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="43" data-width="1440" data-height="1080">
+  <!-- footage slots: when clips arrive they go here as static tags, e.g.
+  <div id="vl-A" class="full" style="z-index:1"><video src="assets/footage/A.mp4" data-start="0" data-duration="3.3" data-track-index="40" muted playsinline style="width:100%;height:100%;object-fit:cover"></video></div> -->
+</div>
+<script>
+/* =============================================================================================
+   AI Hackers Collective: "still that kid" (43 s, 1440x1080, 30 fps). Caption film in the style of
+   the reference reel: a voiceover, every word landing on its spoken syllable as a hard cut, condensed
+   bold lowercase lines spread across the frame, single words slammed huge, yellow and black cards
+   between shots. Word times come from assets/vo/words.json (Whisper on the voiceover).
+   Footage slots A-H show stand-ins until real clips are dropped into assets/footage/.
+   ============================================================================================= */
+window.__timelines = window.__timelines || {};
+const tl = gsap.timeline({ paused: true });
+const root = document.getElementById("root");
+const W = 1440, H = 1080, T = 43;
+const YEL = "#F8F400", WHITE = "#FFFFFF", BLACK = "#0B0B0B";
+let track = 1, uid = 0;
+function clip(t0, t1, z = 2) {
+  const d = document.createElement("div"); d.className = "full"; d.id = "s" + (uid++); d.style.zIndex = z;
+  d.dataset.start = Math.max(0, t0 - 0.001).toFixed(4); d.dataset.duration = Math.max(0.03, t1 - t0).toFixed(4);
+  d.dataset.trackIndex = String(track++); root.appendChild(d); return d;
+}
+function el(parent, tag, cls, style, html) {
+  const e = document.createElement(tag); if (cls) e.className = cls; if (style) e.setAttribute("style", style);
+  if (html != null) e.innerHTML = html; parent.appendChild(e); return e;
+}
+
+/* ---- what sits behind the words -------------------------------------------------------------- */
+const SLOTS = {
+  A: ["you as a kid: toys, a cardboard box, a screwdriver", ["#E08A3C", "#2E6F8E", "#F2C27A"]],
+  B: ["an old phone or radio in a drawer, hands opening it", ["#7A5236", "#2B2622", "#C99A68"]],
+  C: ["a table of opened, broken gadgets", ["#5E6B78", "#1E2328", "#9AA6B2"]],
+  D: ["growing up: commute, office, the screwdriver dropped in a drawer", ["#6E747C", "#25282C", "#B4B9BF"]],
+  E: ["a hand on a laptop at night", ["#1B2A5C", "#07090F", "#3A68C8"]],
+  F: ["tinkering montage: screens, prompts, little builds", ["#5B3FA8", "#10101A", "#2FB7C9"]],
+  G: ["a childhood photo, or kid hands", ["#B07A4A", "#3A2618", "#E6C08A"]],
+  H: ["the community: a meetup, people building together", ["#C2553A", "#1F1A24", "#F0A85A"]],
+};
+const BG = [
+  [0, 3.3, "A"], [3.3, 4.6, "card"], [4.6, 7.95, "B"], [7.95, 9.82, "C"], [9.82, 11.0, "card"], [11.0, 16.7, "D"],
+  [16.7, 19.35, "black"], [19.35, 21.95, "E"], [21.95, 22.6, "card"], [22.6, 30.45, "F"], [30.45, 31.85, "card"],
+  [31.85, 33.75, "G"], [33.75, 37.9, "H"], [37.9, 40.45, "black"], [40.45, T, "card"],
+];
+BG.forEach(([t0, t1, k], i) => {
+  const c = clip(t0, t1, 1);
+  if (k === "card") { c.style.background = YEL; return; }
+  if (k === "black") { c.style.background = BLACK; return; }
+  const [label, [a, b, d]] = SLOTS[k];
+  /* stand-in for footage: an out-of-focus colour field that drifts, so timing and contrast can be judged */
+  const f = el(c, "div", "abs", `left:-15%;top:-15%;width:130%;height:130%;background:
+    radial-gradient(ellipse 45% 55% at 30% 40%, ${a} 0%, rgba(0,0,0,0) 70%),
+    radial-gradient(ellipse 50% 45% at 72% 62%, ${d} 0%, rgba(0,0,0,0) 70%), ${b};filter:blur(30px)`);
+  tl.fromTo(f, { x: -30, y: 10, scale: 1.04 }, { x: 30, y: -10, scale: 1.12, duration: t1 - t0, ease: "none" }, t0);
+  el(c, "div", "slot", "", `shot ${k} · ${label}`);
+});
+
+/* ---- captions ------------------------------------------------------------------------------- */
+const SIZE = { m: 118, l: 210, xl: 330, xxl: 470 };
+/* [start, end, y (0-1), layout, size, colour, words [[text, t, colourOverride?]]] ; layout: "c" centred, "l" left, "r" right */
+const P = [
+  [.33, .72, .30, "l", "m", WHITE, [["as", .33], ["a", .58]]],
+  [.72, 1.12, .50, "c", "xl", YEL, [["KID,", .72]]],
+  [1.12, 1.72, .62, "c", "m", WHITE, [["i", 1.12], ["couldn't", 1.32], ["leave", 1.54]]],
+  [1.72, 2.14, .50, "c", "xl", WHITE, [["ANYTHING", 1.72]]],
+  [2.14, 3.3, .55, "c", "l", YEL, [["alone.", 2.14]]],
+  [3.4, 4.6, .50, "c", "m", BLACK, [["remotes,", 3.4], ["radios,", 3.94]]],
+  [4.64, 5.26, .30, "l", "m", WHITE, [["the", 4.64], ["old", 4.72], ["phone", 4.94]]],
+  [5.26, 6.3, .64, "r", "m", WHITE, [["in", 5.26], ["the", 5.44], ["drawer.", 5.56]]],
+  [6.3, 6.76, .50, "c", "m", WHITE, [["i", 6.3], ["opened", 6.44]]],
+  [6.76, 7.95, .50, "c", "l", YEL, [["ALL", 6.76], ["OF", 7.1], ["THEM.", 7.28]]],
+  [8.08, 8.58, .34, "l", "m", WHITE, [["most", 8.08], ["of", 8.24], ["them", 8.44]]],
+  [8.58, 9.82, .60, "c", "m", WHITE, [["never", 8.58], ["worked", 8.86], ["again.", 9.14]]],
+  [9.88, 11.0, .34, "c", "m", BLACK, [["i", 9.88], ["didn't", 9.98]]],
+  [10.3, 11.0, .60, "c", "xl", BLACK, [["care.", 10.3]]],
+  [11.2, 12.56, .50, "c", "m", WHITE, [["then", 11.2], ["you", 11.44], ["grow", 11.6], ["up.", 11.8]]],
+  [12.56, 13.4, .30, "l", "m", WHITE, [["someone", 12.56], ["tells", 12.88], ["you", 13.18]]],
+  [13.4, 13.86, .50, "c", "m", WHITE, [["to", 13.4], ["pick", 13.52], ["a", 13.68]]],
+  [13.86, 14.14, .50, "c", "xl", YEL, [["LANE", 13.86]]],
+  [14.14, 15.1, .40, "c", "m", WHITE, [["and", 14.14], ["the", 14.46], ["screwdriver", 14.58]]],
+  [15.1, 16.7, .62, "c", "m", WHITE, [["goes", 15.1], ["back", 15.42], ["in", 15.74], ["the", 15.9], ["drawer.", 16.02]]],
+  [16.84, 19.35, .28, "c", "m", WHITE, [["but", 16.84], ["that", 17.08]]],
+  [17.28, 19.35, .52, "c", "xl", YEL, [["ITCH", 17.28]]],
+  [17.5, 19.35, .78, "c", "m", WHITE, [["never", 17.5], ["really", 17.86], ["leaves.", 18.14]]],
+  [19.48, 20.04, .30, "l", "m", WHITE, [["now", 19.48], ["there's", 19.76]]],
+  [20.04, 20.5, .50, "c", "l", WHITE, [["a", 20.04], ["new", 20.12], ["tool", 20.28, YEL]]],
+  [20.5, 21.95, .68, "r", "m", WHITE, [["in", 20.5], ["my", 20.68], ["hand.", 20.84]]],
+  [22.16, 22.6, .50, "c", "xxl", BLACK, [["AI.", 22.16]]],
+  [22.62, 23.98, .30, "l", "m", WHITE, [["and", 22.62], ["it", 23.18], ["lets", 23.6], ["me", 23.78]]],
+  [23.98, 24.86, .50, "c", "l", WHITE, [["OPEN", 23.98], ["THINGS", 24.32], ["UP", 24.66]]],
+  [24.86, 25.55, .72, "c", "l", YEL, [["again.", 24.86]]],
+  [25.55, 26.16, .50, "c", "xl", YEL, [["ideas.", 25.55]]],
+  [26.16, 27.38, .30, "l", "m", WHITE, [["little", 26.16], ["tools", 26.96]]],
+  [27.38, 28.76, .52, "c", "m", WHITE, [["i", 27.38], ["build", 27.66], ["in", 27.9], ["an", 28.16], ["evening,", 28.3]]],
+  [28.76, 30.45, .38, "c", "l", YEL, [["break,", 28.76]]],
+  [29.1, 30.45, .64, "c", "m", WHITE, [["and", 29.1], ["build", 29.36], ["again.", 29.6]]],
+  [30.62, 31.85, .50, "c", "m", BLACK, [["i'm", 30.62], ["not", 30.78], ["an", 30.9], ["engineer.", 31.04]]],
+  [31.9, 32.52, .32, "l", "m", WHITE, [["i'm", 31.9], ["still", 32.04], ["just", 32.26]]],
+  [32.52, 33.75, .55, "c", "xl", YEL, [["THAT", 32.52], ["KID.", 32.76]]],
+  [33.9, 35.02, .30, "c", "m", WHITE, [["the", 33.9], ["only", 34.02], ["thing", 34.3], ["missing", 34.64]]],
+  [35.02, 35.52, .50, "l", "m", WHITE, [["was", 35.02]]],
+  [35.52, 35.84, .50, "c", "xl", YEL, [["PEOPLE", 35.52]]],
+  [35.84, 37.9, .62, "c", "m", WHITE, [["who", 35.84], ["still", 36.0], ["open", 36.26], ["things", 36.64], ["up", 36.96], ["too.", 37.18]]],
+  [38.1, 40.45, .26, "c", "m", WHITE, [["that's", 38.1]]],
+  [38.34, 40.45, .48, "c", "l", WHITE, [["AI", 38.34, YEL], ["HACKERS", 39.02]]],
+  [39.32, 40.45, .70, "c", "l", WHITE, [["COLLECTIVE", 39.32]]],
+  [40.56, T, .50, "c", "m", BLACK, [["come", 40.56], ["tinker", 40.68], ["with", 41.04], ["us.", 41.3]]],
+];
+P.forEach(([t0, t1, y, lay, sz, col, words]) => {
+  const c = clip(t0, t1, 5);
+  const fs = SIZE[sz], n = words.length;
+  /* words spread like the reference: wide gaps on phrase lines, tighter on big lines; one word sits alone */
+  const gap = n === 1 ? 0 : sz === "m" ? (n >= 5 ? .34 : .55) : .3;
+  const pos = lay === "l" ? "left:70px;justify-content:flex-start" : lay === "r" ? "right:70px;justify-content:flex-end" : `left:0;width:${W}px;justify-content:center`;
+  const box = el(c, "div", "ph", `${pos};gap:${gap}em;top:${y * H}px;font-size:${fs}px;color:${col}`);
+  words.forEach(([w, t, oc]) => {
+    const s = el(box, "span", "w", oc ? `color:${oc}` : "", w);
+    tl.set(s, { opacity: 1 }, Math.max(t0, t - 0.001));                              // hard cut on the syllable
+    tl.fromTo(s, { scale: sz === "m" ? 1.06 : 1.1 }, { scale: 1, duration: 2 / 30, ease: "power2.out" }, t);   // a 2-frame settle
+  });
+});
+
+/* ---- grain over everything ---------------------------------------------------------------------- */
+{
+  const c = clip(0, T, 50);
+  el(c, "div", "full", "mix-blend-mode:overlay;opacity:.18",
+    `<svg width="${W}" height="${H}"><filter id="gr"><feTurbulence id="turb" type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="1"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#gr)"/></svg>`);
+  const turb = c.querySelector("#turb");
+  for (let f = 0; f < Math.round(T * 30); f++) tl.set(turb, { attr: { seed: 1 + (f * 37) % 997 } }, f / 30);
+}
+
+tl.set({}, {}, T);
+window.__timelines["main"] = tl;
+</script>
+</body>
+</html>

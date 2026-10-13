@@ -239,7 +239,7 @@ def run_job(job, cmd):
 
 # ---------------------------------------------------------------- "Ask for changes": Claude Code, headless, in this project
 ASSIST = os.path.join(ROOT, "out", ".assistant")
-CLAUDE_TOOLS = ["Read", "Edit", "Write", "Glob", "Grep", "Bash(python3:*)", "Bash(npx:*)", "Bash(ffmpeg:*)", "Bash(ffprobe:*)",
+CLAUDE_TOOLS = ["Read", "Edit", "Write", "Glob", "Grep", "WebFetch", "Bash(python3:*)", "Bash(npx:*)", "Bash(ffmpeg:*)", "Bash(ffprobe:*)",
                 "Bash(ls:*)", "Bash(cp:*)", "Bash(mkdir:*)", "Bash(cat:*)", "Bash(sips:*)", "Bash(du:*)", "Bash(rm -rf snapshots*)"]
 
 
@@ -286,6 +286,13 @@ def system_prompt(kind, tid):
             f"Never print secrets or tokens.")
 
 
+def cli_env():
+    """The user's own Claude Code sign-in. If this server was started from inside another Claude Code session
+    (an IDE, the desktop app), drop that session's variables: they point the CLI at the host's auth, not the user's."""
+    drop = ("CLAUDE", "ANTHROPIC_BASE_URL", "ANTHROPIC_AUTH_TOKEN", "MCP_")
+    return {k: v for k, v in os.environ.items() if not k.startswith(drop) or k == "CLAUDE_CONFIG_DIR"}
+
+
 def run_claude(job, kind, tid, message):
     st = store(); key = f"{kind}:{tid}"; th = st.setdefault(key, {"session": None, "messages": []})
     th["messages"].append({"role": "user", "text": message, "ts": time.time()}); save_store(st)
@@ -294,7 +301,7 @@ def run_claude(job, kind, tid, message):
            "--allowedTools", *CLAUDE_TOOLS, "--append-system-prompt", system_prompt(kind, tid)]
     if th.get("session"):
         cmd += ["--resume", th["session"]]
-    env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_BASE_URL"}
+    env = cli_env()
     JOBS[job]["started"] = time.time()
     try:
         p = subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, env=env)
@@ -392,7 +399,7 @@ class H(BaseHTTPRequestHandler):
             return self._send(200, store().get(f"{unquote(q.get('kind', ''))}:{unquote(q.get('id', ''))}", {"messages": []}))
         if path == "/api/claude-status":
             try:
-                r = subprocess.run(["claude", "auth", "status"], capture_output=True, text=True, timeout=30)
+                r = subprocess.run(["claude", "auth", "status"], capture_output=True, text=True, timeout=30, env=cli_env())
                 txt = (r.stdout + r.stderr).strip()
                 try:
                     signed = bool(json.loads(r.stdout).get("loggedIn"))

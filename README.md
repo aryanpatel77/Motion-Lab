@@ -195,6 +195,9 @@ Send that file back after a run and the fixes go into the shared runtime, so eve
 | `promo-kinetic-20s` | 8-scene kinetic promo: word builds, glyph scramble, pixel rings, orbit tiles, terminal, UI reveal | 20 s |
 | `frontier-explainer-9s` | Label → icon row → node diagram → chat card | 9 s |
 | `lower-third-nestgen` | Light-trace lower third with editable name, title, company and colours | 6 s |
+| `ai-in-action` | Event promo built from layers on motion measured from a reference: pixel-icon wreath, heat-map silhouettes, word beats, speed-ramped conveyors (`measure_ref.py`, `make_layers.py`) | 23.6 s |
+| `nestgen-bts` | Behind-the-scenes edit: whip-pan bursts, title slam, tile reveal, time stamps, metadata frame | 24.6 s |
+| `ai-hackers-collective` | Caption film: local AI voiceover, every word timed by Whisper, yellow/black cards, 8 footage slots (draft) | 43 s |
 | `lower-third-nestgen-v1`, `site-privacy` | Earlier versions, kept for comparison | |
 
 The Site Privacy footage is FlytBase's own product video. The NestGen photos and logos belong to NestGen / FlytBase;
